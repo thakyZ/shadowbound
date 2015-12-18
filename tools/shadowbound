@@ -387,15 +387,16 @@ doRun()
 	# Auto-restart loop
 	while [ $restartserver -ne 0 ]; do
 		echo -n "`timestamp`: Running"
-
-		screen -dmS $sbscreen
-
-		if [ "$sbservercpu" = "x86" ]; then
-			screen -p 0 -S $sbscreen -X stuff "cd $sbserverroot/linux32"$(printf \\r)
-			screen -p 0 -S $sbscreen -X stuff "exec ./starbound_server"$(printf \\r)
-		elif [ "$sbservercpu" = "x64" ]; then
-			screen -p 0 -S $sbscreen -X stuff "cd $sbserverroot/linux64"$(printf \\r)
-			screen -p 0 -S $sbscreen -X stuff "exec ./starbound_server"$(printf \\r)
+		if [ "$sbservercpu" == "x32" ]; then
+			printf " %q" "$sbserverroot/linux32/starbound_server"
+			echo
+			# Put the server process into the background so we can monitor it
+			"$arkserverroot/linux32/starbound_server" &
+		elif [ "$sbservercpu" == "x64" ]; then
+			printf " %q" "$sbserverroot/linux64/starbound_server"
+			echo
+			# Put the server process into the background so we can monitor it
+			"$arkserverroot/linux64/starbound_server" &
 		fi
 
 		# Grab the server PID
@@ -534,7 +535,6 @@ doUpdate()
 	local appupdate=
 	local updatetype=normal
 	local validate=
-	local saveworld=
 
 	if [ "$2" == "--backup" ]; then
 		sbBackupPreUpdate=true
