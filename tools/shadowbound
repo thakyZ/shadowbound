@@ -286,19 +286,19 @@ function parseSteamACF()
 #
 function getCurrentVersion()
 {
-	case "${SBBUILD}" in
-		"stable")
-			if [ -f "${SBDIR}/steamapps/appmanifest_211820.acf" ]; then
+	case "${sbserverroot}" in
+		stable)
+			if [ -f "${sbserverroot}/steamapps/appmanifest_211820.acf" ]; then
 				instanceVer=`while read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${SBDIR}/steamapps/appmanifest_211820.acf"`
-				echo $instanceVer > "$SBDIR/sbversion"
+				echo $instanceVer > "$sbserverroot/sbversion"
 			else
 				instanceVer=""
 			fi
 		;;
-		"unstable"|"nightly")
-			if [ -f "${SBDIR}/steamapps/appmanifest_367540.acf" ]; then
+		unstable|nightly)
+			if [ -f "${sbserverroot}/steamapps/appmanifest_367540.acf" ]; then
 				instanceVer=`while read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${SBDIR}/steamapps/appmanifest_367540.acf"`
-				echo $instanceVer > "$SBDIR/sbversion"
+				echo $instanceVer > "$sbserverroot/sbversion"
 			else
 				instanceVer=""
 			fi
@@ -463,8 +463,8 @@ doStart()
 		tput sc
 		echo "The server is starting..."
 
-		doRun </dev/null >>"$logdir/sbserverLog" 2>&1 & # output of this command is logged
-		echo "`timestamp`: start" >> "$logdir/sbserverLog"
+		doRun </dev/null >>"$logdir/$sbserverLog" 2>&1 & # output of this command is logged
+		echo "`timestamp`: start" >> "$logdir/$sbserverLog"
 		tput rc; tput ed;
 		echo "The server is now up"
 	fi
