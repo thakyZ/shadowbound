@@ -559,7 +559,6 @@ doUpdate()
 	done
 
 	rm -f "${sbserverroot}/.sb-update.lock.$$"
-	fi
 
 	cd "$sbserverroot"
 
