@@ -363,7 +363,7 @@ doRun()
 {
 	cd "$sbserverroot"
 	
-	"" > "$sbserverroot/$sbautorestartfile"
+	"$$" >> "$sbserverroot/$sbautorestartfile"
 
 	# run the server in background
 	echo "`timestamp`: start"
