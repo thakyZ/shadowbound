@@ -362,6 +362,8 @@ function isTheServerRunning()
 doRun()
 {
 	cd "$sbserverroot"
+	
+	"" > "$sbserverroot/$sbautorestartfile"
 
 	# run the server in background
 	echo "`timestamp`: start"
