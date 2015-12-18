@@ -311,21 +311,21 @@ function getCurrentVersion()
 #
 function getAvailableVersion()
 {
-	case "${SBBUILD}"
-		"stable")
+	case "${sbbuild}"
+		stable)
 			rm -f "$steamcmd_appinfocache"
 			buildNumber=`$steamCMDRroot/$steamCMDExec +login $steamCMDUser $steamCMDPass +app_info_update 1 +app_info_print "$367540" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
 			if [ -z "$buildNumber" ]; then
 				buildNumber="Unknown"
 			fi
 		;;
-		"unstable")
+		unstable)
 			rm -f "$steamcmd_appinfocache"
 			buildNumber=`$steamCMDRroot/$steamCMDExec +login $steamCMDUser $steamCMDPass +app_info_update 1 +app_info_print "$367540" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
 			if [ -z "$buildNumber" ]; then
 				buildNumber="Unknown"
 			fi
-		"nightly")
+		nightly)
 			rm -f "$steamcmd_appinfocache"
 			buildNumber=`$steamCMDRroot/$steamCMDExec +login $steamCMDUser $steamCMDPass +app_info_update 1 +app_info_print "$367540" +beta "nightly" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
 			if [ -z "$buildNumber" ]; then
