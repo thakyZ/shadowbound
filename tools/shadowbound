@@ -314,20 +314,21 @@ function getAvailableVersion()
 	case "${sbbuild}"
 		stable)
 			rm -f "$steamcmd_appinfocache"
-			buildNumber=`$steamCMDRroot/$steamCMDExec +login $steamCMDUser $steamCMDPass +app_info_update 1 +app_info_print "$367540" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
+			buildNumber=`$steamcmdroot/$steamcmdexec +login $steamuser $steampass +app_info_update 1 +app_info_print "${s_appid}" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
 			if [ -z "$buildNumber" ]; then
 				buildNumber="Unknown"
 			fi
 		;;
 		unstable)
 			rm -f "$steamcmd_appinfocache"
-			buildNumber=`$steamCMDRroot/$steamCMDExec +login $steamCMDUser $steamCMDPass +app_info_update 1 +app_info_print "$367540" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
+			buildNumber=`$steamcmdroot/$steamcmdexec +login $steamuser $steampass +app_info_update 1 +app_info_print "${un_appid}" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
 			if [ -z "$buildNumber" ]; then
 				buildNumber="Unknown"
 			fi
+		;;
 		nightly)
 			rm -f "$steamcmd_appinfocache"
-			buildNumber=`$steamCMDRroot/$steamCMDExec +login $steamCMDUser $steamCMDPass +app_info_update 1 +app_info_print "$367540" +beta "nightly" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
+			buildNumber=`$steamcmdroot/$steamcmdexec +login $steamuser $steampass +app_info_update 1 +app_info_print "${un_appid}" -beta "nightly" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
 			if [ -z "$buildNumber" ]; then
 				buildNumber="Unknown"
 			fi
@@ -583,11 +584,11 @@ doUpdate()
 		if [ -n "$appupdate" ]; then
 			cd "$steamcmdroot"
 			if [[ "${sbbuild}" == "stable" || "$1" == "stable" ]]; then
-				./$steamcmexec +login $steamuser $steampass +force_install_dir "${sbserverroot}" +app_update 211820 validate +quit
+				./$steamcmdexec +login $steamuser $steampass +force_install_dir "${sbserverroot}" +app_update 211820 validate +quit
 			elif [ "${sbbuild}" == "unstable" || "$1" == "unstable" ]; then
-				./$steamcmexec +login $steamuser $steampass +force_install_dir "${sbserverroot}" +app_update 367540 validate +quit
+				./$steamcmdexec +login $steamuser $steampass +force_install_dir "${sbserverroot}" +app_update 367540 validate +quit
 			elif [ "${sbbuild}" == "nightly" || "$1" == "nightly" ]; then
-				./$steamcmexec +login $steamuser $steampass +force_install_dir "${sbserverroot}" +app_update 367540 validate -beta nightly +quit
+				./$steamcmdexec +login $steamuser $steampass +force_install_dir "${sbserverroot}" +app_update 367540 validate -beta nightly +quit
 			elif [[ "${sbbuild}" != "stable" && "${sbbuild}" != "unstable" && "${sbbuild}" != "nightly" ]]; then
 				echo "`timestamp`: [ " "$RED" "ERROR" "$NORMAL" "] Starbound build is wrong (${sbbuild})" >> "$logdir/update.log"
 				return
