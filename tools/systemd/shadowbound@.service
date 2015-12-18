@@ -1,0 +1,6 @@
+[Unit]
+Description=Daemon to start an starbound server instance
+
+[Service]
+ExecStart=/usr/bin/shadowbound useconfig %i run
+Type=simple

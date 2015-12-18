@@ -1,0 +1,43 @@
+#!/sbin/runscript
+# Short-Description: ARK manager deamon
+# Description:       ARK manager daemon used to start the server and keep it updated
+
+source /etc/shadowbound/shadowbound.cfg
+
+NAME="StarboundServer"
+LOGFILE="${logdir}/${NAME}.log"
+DAEMON="/usr/bin/shadowbound"
+
+depend()
+{
+    need net
+}
+
+start()
+{
+    ebegin "Starting Shadowbound daemon"
+    ulimit -n 100000
+    su -s /bin/sh -c "$DAEMON start" $steamcmd_user
+    sleep 5
+    PID=`ps -ef | grep $NAME | grep -v grep | awk '{print $2}'`
+	
+    if  [ -n "$PID" ];  then
+        eend 0
+    else
+        eend 1
+    fi
+}
+
+stop()
+{
+    ebegin "Stopping Shadowbound daemon"
+    su -s /bin/sh -c "$DAEMON stop" $steamcmd_user
+    sleep 5
+    PID=`ps -ef | grep $NAME | grep -v grep | awk '{print $2}'`
+	
+    if  [ -n "$PID" ];  then
+        eend 0
+    else
+        eend 1
+    fi
+}

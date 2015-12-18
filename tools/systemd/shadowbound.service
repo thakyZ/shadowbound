@@ -1,0 +1,11 @@
+[Unit]
+Description=Starts and stops all starbound server instances
+After=network.target
+
+[Service]
+ExecStart=/usr/libexec/shadowbound/shadowbound.init start
+ExecStop=/usr/libexec/shadowbound/shadowbound.init stop
+Type=oneshot
+
+[Install]
+WantedBy=multi-user.target
