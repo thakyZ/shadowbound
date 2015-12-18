@@ -684,7 +684,17 @@ while true; do
 			printStatus
 		;;
 		view)
-			tail -f "$SBDIR/giraffe_storage/sbserverLog"
+			if [ "$2" == "server" ]; then
+				tail -f "${logdir}/starbound_server.log"
+			elif [ "$2" == "shadowbound" ]; then
+				tail -f "${logdir}/"
+			fi
+		;;
+		upgrade-tools)
+			doUpgradeTools
+		;;
+		uninstall-tools)
+			doUninstallTools
 		;;
 		-h|--help)
 			echo -e "Usage: shadowbound [OPTION]\n"
