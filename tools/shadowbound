@@ -311,7 +311,7 @@ function getCurrentVersion()
 #
 function getAvailableVersion()
 {
-	case "${sbbuild}"
+	case "${sbbuild}" in
 		stable)
 			rm -f "$steamcmd_appinfocache"
 			buildNumber=`$steamcmdroot/$steamcmdexec +login $steamuser $steampass +app_info_update 1 +app_info_print "${s_appid}" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
