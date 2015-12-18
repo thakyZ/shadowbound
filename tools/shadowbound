@@ -542,7 +542,7 @@ doUpdate()
 		sbBackupPreUpdate=true
 	fi
 
-	echo "$$" >"${sbserverroot}/.sb-update.lock.$$"
+	echo "$$" > "${sbserverroot}/.sb-update.lock.$$"
 
 	while true; do
 		if ! ln "${sbserverroot}/.sb-update.lock.$$" "${sbserverroot}/.sb-update.lock"; then
