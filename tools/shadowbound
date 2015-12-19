@@ -341,7 +341,11 @@ function getAvailableVersion()
 #
 function getServerPID()
 {
-	ps aux | grep -v grep | grep SCREEN | grep $sbscreen | awk '{print $2}'
+	if [ "${sbservercpu}" == "x32" ]; then
+		ps -ef | grep "$sbserverroot/linux32/starbound_server" | grep -v grep | awk '{print $2}'
+	elif [ "${sbservercpu}" == "x64" ]; then
+		ps -ef | grep "$sbserverroot/linux64/starbound_server" | grep -v grep | awk '{print $2}'
+	fi
 }
 
 #
