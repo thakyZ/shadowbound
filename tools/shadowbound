@@ -502,7 +502,7 @@ doStop()
 		if isTheServerRunning; then
 			tput rc
 			echo "Killing server..."
-			kill -KILL $PID
+			kill -9 $PID
 		fi
 
 		tput rc; tput ed;
