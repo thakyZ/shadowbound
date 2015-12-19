@@ -389,20 +389,23 @@ doRun()
 	# Auto-restart loop
 	while [ $restartserver -ne 0 ]; do
 		echo -n "`timestamp`: Running"
-		if [ "$sbservercpu" == "x32" ]; then
-			printf " %q" "$sbserverroot/linux32/starbound_server"
+		if [ "${sbservercpu}" == "x32" ]; then
+			cd "${sbserverroot}/linux32"
+			printf " %q" "./starbound_server"
 			echo
 			# Put the server process into the background so we can monitor it
-			"$arkserverroot/linux32/starbound_server" &
-		elif [ "$sbservercpu" == "x64" ]; then
-			printf " %q" "$sbserverroot/linux64/starbound_server"
+			"./starbound_server" &
+			# Grab the server PID
+			serverpid=$!
+		elif [ "${sbservercpu}" == "x64" ]; then
+			cd "${sbserverroot}/linux32"
+			printf " %q" "./starbound_server"
 			echo
 			# Put the server process into the background so we can monitor it
-			"$arkserverroot/linux64/starbound_server" &
+			"./starbound_server" &
+			# Grab the server PID
+			serverpid=$!
 		fi
-
-		# Grab the server PID
-		serverpid=$!
 		echo "`timestamp`: Server PID: $serverpid"
 		rm -f "$sbserverroot/$sbautorestartfile"
 		restartserver=0
