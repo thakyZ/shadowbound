@@ -290,7 +290,7 @@ function getCurrentVersion()
 		stable)
 			if [ -f "${sbserverroot}/steamapps/appmanifest_${s_appid}.acf" ]; then
 				instanceVer=`while read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${s_appid}.acf"`
-				echo $instanceVer > "$sbserverroot/sbversion"
+				echo $instanceVer > "${sbserverroot}/sbversion"
 			else
 				instanceVer=""
 			fi
@@ -298,7 +298,7 @@ function getCurrentVersion()
 		unstable|nightly)
 			if [ -f "${sbserverroot}/steamapps/appmanifest_${un_appid}.acf" ]; then
 				instanceVer=`while read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${un_appid}.acf"`
-				echo $instanceVer > "$sbserverroot/sbversion"
+				echo $instanceVer > "${sbserverroot}/sbversion"
 			else
 				instanceVer=""
 			fi
