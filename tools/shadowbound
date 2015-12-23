@@ -286,7 +286,7 @@ function parseSteamACF()
 #
 function getCurrentVersion()
 {
-	case "${sbserverroot}" in
+	case "${sbbuild}" in
 		stable)
 			if [ -f "${sbserverroot}/steamapps/appmanifest_${s_appid}.acf" ]; then
 				instanceVer=`while read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${s_appid}.acf"`
