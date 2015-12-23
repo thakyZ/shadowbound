@@ -243,7 +243,7 @@ function isUpdateNeeded()
 	getCurrentVersion
 	getAvailableVersion
 
-	if [[ "$buildNumber" == "Unknown" || "$buildNumber" -eq "$instanceVer" ]]; then
+	if [[ "$buildNumber" == "Unknown" || "$buildNumber" -eq "$instVer" ]]; then
 		return 1   # no update needed
 	else
 		return 0   # update needed
@@ -290,17 +290,17 @@ function getCurrentVersion()
 		stable)
 			if [ -f "${sbserverroot}/steamapps/appmanifest_${s_appid}.acf" ]; then
 				instanceVer=`while read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${s_appid}.acf"`
-				echo $instanceVer > "${sbserverroot}/sbversion"
+				echo $instVer > "${sbserverroot}/sbversion"
 			else
-				instanceVer=""
+				instVer=""
 			fi
 		;;
 		unstable|nightly)
 			if [ -f "${sbserverroot}/steamapps/appmanifest_${un_appid}.acf" ]; then
 				instanceVer=`while read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${un_appid}.acf"`
-				echo $instanceVer > "${sbserverroot}/sbversion"
+				echo $instVer > "${sbserverroot}/sbversion"
 			else
-				instanceVer=""
+				instVer=""
 			fi
 		;;
 	esac
