@@ -8,7 +8,7 @@
 
 # Script version
 shaboundVersion='0.1'
-shaboundCommit=''
+shaboundCommit='1bc91f17aebaa93d0b56b7ae37f82052752d2a8d'
 
 doUpgradeTools()
 {
@@ -149,11 +149,11 @@ maxOpenFiles=100000
 # Set TERM to "dumb" if TERM is not set
 export TERM=${TERM:-dumb}
 
-shadowboundLog="shadowbound.log"  # here are logged the actions performed by shaboundmanager
-sbserverLog="starbound_server.log"    # here is logged the output of ShooterGameServer
+shadowboundLog="shadowbound.log"  # here are logged the actions performed by shadowbound
+sbserverLog="starbound_server.log"    # here is logged the output of Starbound
 
-s_appid="${appid:-211820}"
-un_appid="${mod_appid:-367540}"
+s_appid="${s_appid:-211820}"
+un_appid="${un_appid:-367540}"
 sbautorestartfile="${sbautorestartfile:-.autorestart}"
 install_bindir="${install_bindir:-${0%/*}}"
 install_libexecdir="${install_libexecdir:-${install_bindir%/*}/libexec/shadowbound}"
@@ -243,7 +243,7 @@ function isUpdateNeeded()
 	getCurrentVersion
 	getAvailableVersion
 
-	if [[ "$buildNumber" == "Unknown" || "$buildNumber" -eq "$instVer" ]]; then
+	if [[ "$bnumber" == "Unknown" || "$bnumber" -eq "$instver" ]]; then
 		return 1   # no update needed
 	else
 		return 0   # update needed
@@ -286,21 +286,21 @@ function parseSteamACF()
 #
 function getCurrentVersion()
 {
-	case "${sbbuild}" in
+	case "$sbbuild" in
 		stable)
 			if [ -f "${sbserverroot}/steamapps/appmanifest_${s_appid}.acf" ]; then
-				instVer=`while read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${s_appid}.acf"`
-				echo $instVer > "${sbserverroot}/sbversion"
+				instver=`while read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${s_appid}.acf"`
+				echo $instver > "${sbserverroot}/sbversion"
 			else
-				instVer=""
+				instver=""
 			fi
 		;;
 		unstable|nightly)
 			if [ -f "${sbserverroot}/steamapps/appmanifest_${un_appid}.acf" ]; then
-				instVer=`while read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${un_appid}.acf"`
-				echo $instVer > "${sbserverroot}/sbversion"
+				instver=`while read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${un_appid}.acf"`
+				echo $instver > "${sbserverroot}/sbversion"
 			else
-				instVer=""
+				instver=""
 			fi
 		;;
 	esac
@@ -311,26 +311,26 @@ function getCurrentVersion()
 #
 function getAvailableVersion()
 {
-	case "${sbbuild}" in
+	case "$sbbuild" in
 		stable)
 			rm -f "$steamcmd_appinfocache"
-			buildNumber=`$steamcmdroot/$steamcmdexec +@NoPromptForPassword 1 +login anonymous +app_info_update 1 +app_info_print "${s_appid}" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
-			if [ -z "$buildNumber" ]; then
-				buildNumber="Unknown"
+			bnumber=`$steamcmdroot/$steamcmdexec +@NoPromptForPassword 1 +login ${steamuser} +app_info_update 1 +app_info_print "$s_appid" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
+			if [ -z "$bnumber" ]; then
+				bnumber="Unknown"
 			fi
 		;;
 		unstable)
 			rm -f "$steamcmd_appinfocache"
-			buildNumber=`$steamcmdroot/$steamcmdexec +@NoPromptForPassword 1 +login anonymous +app_info_update 1 +app_info_print "${un_appid}" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
-			if [ -z "$buildNumber" ]; then
-				buildNumber="Unknown"
+			bnumber=`$steamcmdroot/$steamcmdexec +@NoPromptForPassword 1 +login ${steamuser} +app_info_update 1 +app_info_print "$un_appid" -beta NONE +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
+			if [ -z "$bnumber" ]; then
+				bnumber="Unknown"
 			fi
 		;;
 		nightly)
 			rm -f "$steamcmd_appinfocache"
-			buildNumber=`$steamcmdroot/$steamcmdexec +@NoPromptForPassword 1 +login anonymous +app_info_update 1 +app_info_print "${un_appid}" -beta nightly +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
-			if [ -z "$buildNumber" ]; then
-				buildNumber="Unknown"
+			bnumber=`$steamcmdroot/$steamcmdexec +@NoPromptForPassword 1 +login ${steamuser} +app_info_update 1 +app_info_print "$un_appid" -beta nightly +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
+			if [ -z "$bnumber" ]; then
+				bnumber="Unknown"
 			fi
 		;;
 	esac
@@ -522,7 +522,7 @@ doInstall()
 	if [ ! -d "$sbserverroot" ]; then
 		# If it does not exist, try create it
 		echo -e "Creating the Starbound server directory ($sbserverroot)"
-		mkdir -p "$starboundserverroot"
+		mkdir -p "$sbserverroot"
 		if [ ! $? ] ; then
 			echo -e "[" "$RED" "ERROR" "$NORMAL" "]" "\tFailed to create the defined Starbound server directory ($sbserverroot)"
 			exit 1
@@ -531,7 +531,7 @@ doInstall()
 
 	cd "$steamcmdroot"
 	# install the server
-	./$steamcmdexec +login "$steamuser" "$steampass" +force_install_dir "$sbserverroot" +app_update 211820 validate +quit
+	./$steamcmdexec +@NoPromptForPassword 1 +login $steamuser +force_install_dir "$sbserverroot" +app_update $s_appid validate +quit
 	# the current version should be the last version. We set our version
 	getCurrentVersion
 }
@@ -542,12 +542,18 @@ doInstall()
 doUpdate()
 {
 	local appupdate=
-	local updatetype=normal
 	local validate=
 
-	if [ "$2" == "--backup" ]; then
-		sbBackupPreUpdate=true
-	fi
+	for arg in "$@"; do
+		if [ "$arg" == "--force" ]; then
+			appupdate=1
+		elif [ "$arg" == "--backup" ]; then
+			sbBackupPreUpdate=true
+		elif [ "$arg" == "--validate" ]; then
+			validate=validate
+			appupdate=1
+		fi
+	done
 
 	echo "$$" >"${sbserverroot}/.sb-update.lock.$$"
 
@@ -591,18 +597,15 @@ doUpdate()
 	
 		if [ -n "$appupdate" ]; then
 			cd "$steamcmdroot"
-			if [[ "${sbbuild}" == "stable" || "$1" == "stable" ]]; then
-				./$steamcmdexec +@NoPromptForPassword 1 +login $steamuser $steampass +force_install_dir "${sbserverroot}" +app_update 211820 validate +quit
-			elif [ "${sbbuild}" == "unstable" || "$1" == "unstable" ]; then
-				./$steamcmdexec +@NoPromptForPassword 1 +login $steamuser $steampass +force_install_dir "${sbserverroot}" +app_update 367540 validate +quit
-			elif [ "${sbbuild}" == "nightly" || "$1" == "nightly" ]; then
-				./$steamcmdexec +@NoPromptForPassword 1 +login $steamuser $steampass +force_install_dir "${sbserverroot}" +app_update 367540 validate -beta nightly +quit
-			elif [[ "${sbbuild}" != "stable" && "${sbbuild}" != "unstable" && "${sbbuild}" != "nightly" ]]; then
-				echo "`timestamp`: [ " "$RED" "ERROR" "$NORMAL" "] Starbound build is wrong (${sbbuild})" >> "$logdir/update.log"
-				return
-			elif [[ "$1" != "stable" && "$1" != "unstable" && "$1" != "nightly" ]]; then
-				echo "`timestamp`: [ " "$RED" "ERROR" "$NORMAL" "] Starbound build is wrong (" "$1" ")" >> "$logdir/update.log"
-				return
+			if [ "${sbbuild}" == "stable" ]; then
+				./$steamcmdexec +@NoPromptForPassword 1 +login $steamuser +force_install_dir "$sbserverroot" +app_update $s_appid $validate +quit
+			elif [ "${sbbuild}" == "unstable" ]; then
+				./$steamcmdexec +@NoPromptForPassword 1 +login $steamuser +force_install_dir "$sbserverroot" +app_update $un_appid $validate -beta NONE +quit
+			elif [ "${sbbuild}" == "nightly" ]; then
+				./$steamcmdexec +@NoPromptForPassword 1 +login $steamuser +force_install_dir "$sbserverroot" +app_update $un_appid $validate -beta nightly +quit
+			else
+				echo "`timestamp`: [ " "$RED" "ERROR" "$NORMAL" "] Starbound build is wrong (${sbbuild})"
+				return 1
 			fi
 
 			# the current version should be the last version. We set our version
@@ -679,8 +682,14 @@ while true; do
 			doInstall
 		;;
 		update)
-			doUpdate "$2" "$3"
-			shift
+			args=()
+
+			while [[ "$2" =~ ^-- ]]; do
+				args=( "${args[@]}" "$2" )
+				shift
+			done
+
+			doUpdate "${args[@]}"
 		;;
 		checkupdate)
 			checkForUpdate
