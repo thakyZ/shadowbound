@@ -314,21 +314,21 @@ function getAvailableVersion()
 	case "${sbbuild}" in
 		stable)
 			rm -f "$steamcmd_appinfocache"
-			buildNumber=`$steamcmdroot/$steamcmdexec +login "$steamuser" "$steampass" +app_info_update 1 +app_info_print "${s_appid}" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
+			buildNumber=`$steamcmdroot/$steamcmdexec +login anonymous +app_info_update 1 +app_info_print "${s_appid}" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
 			if [ -z "$buildNumber" ]; then
 				buildNumber="Unknown"
 			fi
 		;;
 		unstable)
 			rm -f "$steamcmd_appinfocache"
-			buildNumber=`$steamcmdroot/$steamcmdexec +login "$steamuser" "$steampass" +app_info_update 1 +app_info_print "${un_appid}" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
+			buildNumber=`$steamcmdroot/$steamcmdexec +login anonymous +app_info_update 1 +app_info_print "${un_appid}" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
 			if [ -z "$buildNumber" ]; then
 				buildNumber="Unknown"
 			fi
 		;;
 		nightly)
 			rm -f "$steamcmd_appinfocache"
-			buildNumber=`$steamcmdroot/$steamcmdexec +login "$steamuser" "$steampass" +app_info_update 1 +app_info_print "${un_appid}" -beta nightly +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
+			buildNumber=`$steamcmdroot/$steamcmdexec +login anonymous +app_info_update 1 +app_info_print "${un_appid}" -beta nightly +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
 			if [ -z "$buildNumber" ]; then
 				buildNumber="Unknown"
 			fi
