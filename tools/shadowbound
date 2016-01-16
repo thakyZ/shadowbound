@@ -701,7 +701,7 @@ while true; do
 			printStatus
 		;;
 		view)
-			if [ "$2" == "server" ]; then
+			if [[ "$2" == "server" || "$2" == "" ]]; then
 				tail -f "${logdir}/starbound_server.log"
 			elif [ "$2" == "shadowbound" ]; then
 				tail -f "${logdir}/"
