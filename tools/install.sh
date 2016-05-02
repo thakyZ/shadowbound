@@ -144,6 +144,9 @@ if [ "$userinstall" == "yes" ]; then
 
 	# Create a folder in ~/.local/share to store shadowbound support files
 	mkdir -p "${INSTALL_ROOT}${DATADIR}"
+	
+	# Copy the rcon client script to ~/.local/share/shadowbound
+	cp sbrconclient.py "${INSTALL_ROOT}${DATADIR}/sbrconclient.py"
 
 	# Copy the uninstall script to ~/.local/share/shadowbound
 	cp uninstall-user.sh "${INSTALL_ROOT}${DATADIR}/shadowbound-uninstall.sh"
@@ -168,14 +171,13 @@ if [ "$userinstall" == "yes" ]; then
 
 	# Copy shadowbound.cfg to ~/.shadowbound.cfg if it doesn't already exist
 	if [ -f "${INSTALL_ROOT}${PREFIX}/.shadowbound.cfg" ]; then
-	  newopts=( sbbackupdir sbautorestartfile install_bindir install_libexecdir install_datadir mod_appid )
+	  newopts=( sbbackupdir sbautorestartfile install_bindir install_libexecdir install_datadir )
 	  newopt_steamcmd_appinfocache="${PREFIX}/Steam/appcache/appinfo.vdf"
 	  newopt_sbbackupdir="${PREFIX}/Starbound-Backups"
 	  newopt_sbautorestartfile=".autorestart"
 	  newopt_install_bindir="${BINDIR}"
 	  newopt_install_libexecdir="${LIBEXECDIR}"
 	  newopt_install_datadir="${DATADIR}"
-	  newopt_mod_appid=211820
 
 	  if grep '^\(servermail\|shaboundVersion\)=' "${INSTALL_ROOT}${PREFIX}/.shadowbound.cfg" >/dev/null 2>&1; then
 		sed -i '/^\(servermail\|shaboundVersion\)=/d' "${INSTALL_ROOT}${PREFIX}/.shadowbound.cfg"
@@ -199,8 +201,12 @@ else
 	cp shadowbound "${INSTALL_ROOT}${BINDIR}/shadowbound"
 	chmod +x "${INSTALL_ROOT}${BINDIR}/shadowbound"
 
-	# Copy the uninstall script to ~/.local/share/shadowbound
 	mkdir -p "${INSTALL_ROOT}${LIBEXECDIR}"
+	
+	# Copy the rcon client script to ~/.local/share/shadowbound
+	cp sbrconclient.py "${INSTALL_ROOT}${LIBEXECDIR}/sbrconclient.py"
+	
+	# Copy the uninstall script to ~/.local/share/shadowbound
 	cp uninstall.sh "${INSTALL_ROOT}${LIBEXECDIR}/shadowbound-uninstall.sh"
 	chmod +x "${INSTALL_ROOT}${LIBEXECDIR}/shadowbound-uninstall.sh"
 	sed -i -e "s|^BINDIR=.*|BINDIR=\"${BINDIR}\"|" \
@@ -232,7 +238,7 @@ else
 		# add to startup if the system use sysinit
 		if [ -x /usr/sbin/update-rc.d -a -z "${INSTALL_ROOT}" ]; then
 		  update-rc.d shadowbound defaults
-		  echo "Ark server will now start on boot, if you want to remove this feature run the following line"
+		  echo "Starbound server will now start on boot, if you want to remove this feature run the following line"
 		  echo "update-rc.d -f shadowbound remove"
 		fi
 	  fi
@@ -258,7 +264,7 @@ else
 		sed -i "s@^DAEMON=\"/usr/bin/@DAEMON=\"${BINDIR}/@" "${INSTALL_ROOT}/etc/rc.d/init.d/shadowbound"
 		if [ -x /sbin/chkconfig -a -z "${INSTALL_ROOT}" ]; then
 		  chkconfig --add shadowbound
-		  echo "Ark server will now start on boot, if you want to remove this feature run the following line"
+		  echo "Starbound server will now start on boot, if you want to remove this feature run the following line"
 		  echo "chkconfig shadowbound off"
 		fi
 	  fi
@@ -269,7 +275,7 @@ else
 		
 		if [ -x /sbin/rc-update -a -z "${INSTALL_ROOT}" ]; then
 			rc-update add shadowbound default
-			echo "Ark server will now start on boot, if you want to remove this feature run the following line"
+			echo "Starbound server will now start on boot, if you want to remove this feature run the following line"
 			echo "rc-update del shadowbound default"
 		fi
 	elif [ -f /etc/systemd/system.conf ]; then   # used by systemd
@@ -289,7 +295,7 @@ else
 		fi
 	fi
 
-	# Create a folder in /var/log to let Ark tools write its own log files
+	# Create a folder in /var/log to let Shadowbound tools write its own log files
 	mkdir -p "${INSTALL_ROOT}/var/log/shadowbound"
 	chown "$steamcmd_user" "${INSTALL_ROOT}/var/log/shadowbound"
 
@@ -305,14 +311,13 @@ else
 		   "${INSTALL_ROOT}/etc/shadowbound/shadowbound.cfg.NEW"
 
 	if [ -f "${INSTALL_ROOT}/etc/shadowbound/shadowbound.cfg" ]; then
-		newopts=( sbbackupdir sbautorestartfile install_bindir install_libexecdir install_datadir mod_appid )
+		newopts=( sbbackupdir sbautorestartfile install_bindir install_libexecdir install_datadir )
 		newopt_steamcmd_appinfocache="/home/${steamcmd_user}/Steam/appcache/appinfo.vdf"
 		newopt_sbbackupdir="/home/${steamcmd_user}/Starbound-Backups"
 		newopt_sbautorestartfile=".autorestart"
 		newopt_install_bindir="${BINDIR}"
 		newopt_install_libexecdir="${LIBEXECDIR}"
 		newopt_install_datadir="${DATADIR}"
-		newopt_mod_appid=211820
 
 		if grep '^\(servermail\|shaboundVersion\)=' "${INSTALL_ROOT}/etc/shadowbound/shadowbound.cfg" >/dev/null 2>&1; then
 			sed -i '/^\(servermail\|shaboundVersion\)=/d' "${INSTALL_ROOT}/etc/shadowbound/shadowbound.cfg"

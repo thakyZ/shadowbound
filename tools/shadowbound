@@ -7,22 +7,19 @@
 # Contributors:   doomsider
 
 # Script version
-shaboundVersion='0.1'
-shaboundCommit='1bc91f17aebaa93d0b56b7ae37f82052752d2a8d'
+sbstVersion='0.2'
+sbstCommit=''
 
-doUpgradeTools()
-{
-	local sudo=sudo
-
+doUpgradeTools() {
+  local sudo=sudo
 	if [ "$UID" == 0 -o "$steamcmd_user" == "--me" ]; then
 		sudo=
 	fi
+	echo "shadowbound v${sbstVersion}: Checking for updates..."
+	sbstLatestVersion=`curl -s https://raw.githubusercontent.com/thakyZ/shadowbound/${shaboundbuild}/.version`
+	sbstLatestCommit=`curl -s https://api.github.com/repos/thakyZ/shadowbound/git/refs/heads/${shaboundbuild} | sed -n 's/^ *"sha": "\(.*\)",.*/\1/p'`
 
-	echo "shadowbound v${shaboundVersion}: Checking for updates..."
-	shaboundLatestVersion=`curl -s https://raw.githubusercontent.com/thakyZ/shadowbound/${shaboundbuild}/.version`
-	shaboundLatestCommit=`curl -s https://api.github.com/repos/thakyZ/shadowbound/git/refs/heads/${shaboundbuild} | sed -n 's/^ *"sha": "\(.*\)",.*/\1/p'`
-
-	if [ "$shaboundLatestVersion" == "Not Found" ]; then
+	if [ "$sbstLatestVersion" == "Not Found" ]; then
 		echo "Channel ${shaboundbuild} does not exist"
 		echo
 		echo "Available channels:"
@@ -32,7 +29,6 @@ doUpgradeTools()
 	fi
 
 	reinstall_args=()
-
 	if [ -n "$install_bindir" ]; then
 		reinstall_args=( "${reinstall_args[@]}" "--bindir" "$install_bindir" )
 	fi
@@ -42,16 +38,15 @@ doUpgradeTools()
 	if [ -n "$install_datadir" ]; then
 		reinstall_args=( "${reinstall_args[@]}" "--datadir" "$install_datadir" )
 	fi
-	if [[ $shaboundLatestVersion > $shaboundVersion ]]; then
-		read -p "A new version was found! Do you want to upgrade Shadowbound to v${shaboundLatestVersion}?" -n 1 -r
+	if [[ $sbstLatestVersion > $sbstVersion ]]; then
+		read -p "A new version was found! Do you want to upgrade Shadowbound to v${sbstLatestVersion}?" -n 1 -r
 		echo -en "\n"
-
 		if [[ $REPLY =~ ^[Yy]$ ]]; then
 			curl -s https://raw.githubusercontent.com/thakyZ/shadowbound/${shaboundbuild}/netinstall.sh | $sudo bash -s -- ${steamcmd_user} ${shaboundbuild} "${reinstall_args[@]}"
 			exit 0
 		fi
-	elif [[ $shaboundLatestVersion == $shaboundVersion && "$shaboundLatestCommit" != "$shaboundCommit" ]]; then
-		read -p "A hotfix is available for v${shaboundLatestVersion}.  Do you wish to install it?" -n 1 -r
+	elif [[ $shaboundLatestVersion == $sbstVersion && "$sbstLatestCommit" != "$sbstCommit" ]]; then
+		read -p "A hotfix is available for v${sbstVersion}.  Do you wish to install it?" -n 1 -r
 		echo -en "\n"
 
 		if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -66,7 +61,6 @@ doUpgradeTools()
 doUninstallTools()
 {
 	local sudo=sudo
-
 	if [ "$UID" == 0 -o "$steamcmd_user" == "--me" ]; then
 		sudo=
 	fi
@@ -89,7 +83,6 @@ runAsRoot()
 	getConfigVar()
 	{
 		val="$(echo -ne "$(sed -n "/^$1=/{s|^[^=]*=||;s|[[:space:]]*\\(#.*\\)*\$||;s|^\"\\(.*\\)\"\$|\\1|;s|^'\\(.*\\)'\$|\\1|;p}" <"/etc/shadowbound/shadowbound.cfg" | tail -n1)")"
-
 		if [ -n "$val" ]; then
 			echo "$val"
 		else
@@ -97,7 +90,7 @@ runAsRoot()
 		fi
 	}
 
-	shaboundChannel="$(getConfigVar shaboundChannel "master")"
+	sbstChannel="$(getConfigVar sbstChannel "master")"
 	install_bindir="$(getConfigVar install_bindir "${0%/*}")"
 	install_libexecdir="$(getConfigVar install_libexecdir "${install_bindir%/*}/libexec/shadowbound")"
 	install_datadir="$(getConfigVar install_datadir "${install_bindir%/*}/share/shadowbound")"
@@ -130,11 +123,16 @@ fi
 
 # Global variables
 if [ -f "/etc/shadowbound/shadowbound.cfg" ]; then
-	source /etc/shadowbound/shadowbound.cfg
+  source /etc/shadowbound/shadowbound.cfg
 fi
 
 if [ -f "${HOME}/.shadowbound.cfg" ]; then
-	source "${HOME}/.shadowbound.cfg"
+  source "${HOME}/.shadowbound.cfg"
+fi
+
+lsof=lsof
+if [ -x /usr/sbin/lsof ]; then
+  lsof=/usr/sbin/lsof
 fi
 
 # Local variables
@@ -152,8 +150,8 @@ export TERM=${TERM:-dumb}
 shadowboundLog="shadowbound.log"  # here are logged the actions performed by shadowbound
 sbserverLog="starbound_server.log"    # here is logged the output of Starbound
 
-s_appid="${s_appid:-211820}"
-un_appid="${un_appid:-367540}"
+stable_appid="${stable_appid:-211820}"
+unstable_appid="${unstable_appid:-367540}"
 sbautorestartfile="${sbautorestartfile:-.autorestart}"
 install_bindir="${install_bindir:-${0%/*}}"
 install_libexecdir="${install_libexecdir:-${install_bindir%/*}/libexec/shadowbound}"
@@ -199,7 +197,7 @@ checkConfig()
 
 	# Environment configuration
 	# sbserverroot
-	if [[ ! -f "$sbserverroot/linux32/starbound_server" || ! -f "$sbserverroot/linux64/starbound_server" ]] ; then
+	if [[ ! -f "$sbserverroot/linux32/starbound_server" || ! -f "$sbserverroot/linux64/starbound_server" || ! -f "$sbserverroot/linux/starbound_server" ]] ; then
 		echo -e "[" "$YELLOW" "WARN" "$NORMAL" "]" "\tYour Starbound server exec could not be found."
 	fi
 
@@ -211,6 +209,132 @@ checkConfig()
 }
 
 #
+# Get setting from config or from ini file
+# $1 is the setting name
+# $2 is the default
+#
+getStarboundServerSetting() {
+  local varname="sb_$1"
+  if [ -n "${!varname}" ]; then
+    echo "${!varname}"
+  else
+    local val="$(tr -d '\0\376\377' <"${sbserverroot}/giraffe_storage/starbound.config" | sed -n 's/.*"'$1'" : \(.*\),/\1/p' )"
+    if [ -n "$val" ]; then
+      val="${val%\"}"
+      val="${val#\"}"
+      echo "$val"
+    else
+      echo "$2"
+    fi
+  fi
+}
+
+#
+# Get server RCON Admin Password
+#
+getAdminPassword()
+{
+	getStarboundServerSetting "rconServerPassword" ""
+}
+
+#
+# Get server Game Port
+#
+getGamePort()
+{
+	getStarboundServerSetting "gameServerPort" "21025"
+}
+
+#
+# Get server RCON Port
+#
+getRconPort()
+{
+	getStarboundServerSetting "rconServerPort" "21026"
+}
+
+#
+# Get server Query Port
+#
+getQueryPort()
+{
+	getStarboundServerSetting "queryServerPort" "21025"
+}
+
+#
+# Execute RCON command
+#
+rconcmd()
+{
+	python "${install_libexecdir}/sbrconclient.py" "$(getRconPort)" "127.0.0.1" "$(getAdminPassword)" "$1"
+}
+
+#
+# Exit cleanly
+#
+doExitServer()
+{
+	rconcmd "stop"
+}
+
+#
+# Broadcast message
+#
+doBroadcast()
+{
+	rconcmd "say $1" >/dev/null
+}
+
+#
+# Broadcast message with echo
+#
+doBroadcastWithEcho()
+{
+	rconcmd "say $1"
+}
+
+#
+# SteamCMD helper function
+#
+function runSteamCMD()
+{
+    "$steamcmdroot/$steamcmdexec" +@NoPromptForPassword 1 +login ${steamlogin} "$@" +quit
+}
+
+function runSteamCMDspinner()
+{
+    if [ -n "$verbose" ]; then
+        echo
+        runSteamCMD "$@"
+        return $?
+    else
+        if [ -z "$progressDisplayType" ]; then
+            if stty <&1 >/dev/null 2>&1; then
+                progressDisplayType=spinner
+            else
+                  progressDisplayType=dots
+            fi
+        fi
+        runSteamCMD "$@" >/dev/null 2>&1 &
+        local scpid=$!
+        local pos=0
+        local spinner=( '\b-' '\b/' '\b|' '\b\\' )
+        if [ "$progressDisplayType" == "dots" ]; then
+            spinner=( '.' )
+        fi
+        echo -n ' ...  '
+        while kill -0 $scpid 2>/dev/null; do
+            echo -ne "${spinner[$pos]}"
+            (( pos = (pos + 1) % ${#spinner[*]} ))
+            sleep 0.5
+        done
+        echo -ne '\b \b'
+        wait $scpid
+        return $?
+    fi
+}
+
+#
 # Check if a new version is available but not apply it
 #
 function checkForUpdate()
@@ -218,19 +342,24 @@ function checkForUpdate()
 	tput sc
 	echo "Querying Steam database for latest version..."
 
-	if isUpdateNeeded; then
+	if [ isUpdateNeeded == "0" ]; then
 		tput rc; tput ed;
 		echo -e "Current version:" "$RED" $instver "$NORMAL"
 		echo -e "Available version:" "$GREEN" $bnumber "$NORMAL"
 		echo -e "Your server needs to be restarted in order to receive the latest update."
 		echo -e "Run \"shadowbound update\" to do so"
-		return 1
-	else
+		return "0"
+	elif [ isUpdateNeeded == "0" ]; then
 		tput rc; tput ed;
 		echo -e "Current version:" "$GREEN" $instver "$NORMAL"
 		echo -e "Available version:" "$GREEN" $bnumber "$NORMAL"
 		echo "Your server is up to date!"
-		return 0
+		return "1"
+	elif [ isUpdateNeeded == "2" ]; then
+		echo -e "Current version:" "$GREEN" $instver "$NORMAL"
+		echo -e "Available version:" "$RED" $bnumber "$NORMAL"
+		echo -e "Couldn't fetch available version, please log into SteamCMD separately."
+		exit 1
 	fi
 }
 
@@ -243,10 +372,12 @@ function isUpdateNeeded()
 	getCurrentVersion
 	getAvailableVersion
 
-	if [[ "$bnumber" == "Unknown" || "$bnumber" -eq "$instver" ]]; then
-		return 1   # no update needed
+	if [ "$bnumber" -eq "$instver" ]; then
+		return "1"   # no update needed
+	elif [ "$bnumber" == "Unknown" ]; then
+		return "2"   # couldn't retrieve version.
 	else
-		return 0   # update needed
+		return "0"   # update needed
 	fi
 }
 
@@ -288,17 +419,17 @@ function getCurrentVersion()
 {
 	case "$sbbuild" in
 		stable)
-			if [ -f "${sbserverroot}/steamapps/appmanifest_${s_appid}.acf" ]; then
-				instver=`while read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${s_appid}.acf"`
-				echo $instver > "${sbserverroot}/sbversion"
+			if [ -f "${sbserverroot}/steamapps/appmanifest_${stable_appid}.acf" ]; then
+				instver=`while read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${stable_appid}.acf"`
+				echo $instver > "${sbserverroot}/sbstVersion"
 			else
 				instver=""
 			fi
 		;;
 		unstable|nightly)
-			if [ -f "${sbserverroot}/steamapps/appmanifest_${un_appid}.acf" ]; then
-				instver=`while read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${un_appid}.acf"`
-				echo $instver > "${sbserverroot}/sbversion"
+			if [ -f "${sbserverroot}/steamapps/appmanifest_${unstable_appid}.acf" ]; then
+				instver=`while read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${unstable_appid}.acf"`
+				echo $instver > "${sbserverroot}/sbstVersion"
 			else
 				instver=""
 			fi
@@ -314,21 +445,21 @@ function getAvailableVersion()
 	case "$sbbuild" in
 		stable)
 			rm -f "$steamcmd_appinfocache"
-			bnumber=`$steamcmdroot/$steamcmdexec +@NoPromptForPassword 1 +login ${steamuser} +app_info_update 1 +app_info_print "$s_appid" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
+			bnumber=`$steamcmdroot/$steamcmdexec +@NoPromptForPassword 1 +login ${steamuser} +app_info_update 1 +app_info_print "$stable_appid" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
 			if [ -z "$bnumber" ]; then
 				bnumber="Unknown"
 			fi
 		;;
 		unstable)
 			rm -f "$steamcmd_appinfocache"
-			bnumber=`$steamcmdroot/$steamcmdexec +@NoPromptForPassword 1 +login ${steamuser} +app_info_update 1 +app_info_print "$un_appid" -beta NONE +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
+			bnumber=`$steamcmdroot/$steamcmdexec +@NoPromptForPassword 1 +login ${steamuser} +app_info_update 1 +app_info_print "$unstable_appid" -beta NONE +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
 			if [ -z "$bnumber" ]; then
 				bnumber="Unknown"
 			fi
 		;;
 		nightly)
 			rm -f "$steamcmd_appinfocache"
-			bnumber=`$steamcmdroot/$steamcmdexec +@NoPromptForPassword 1 +login ${steamuser} +app_info_update 1 +app_info_print "$un_appid" -beta nightly +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
+			bnumber=`$steamcmdroot/$steamcmdexec +@NoPromptForPassword 1 +login ${steamuser} +app_info_update 1 +app_info_print "$unstable_appid" -beta nightly +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done`
 			if [ -z "$bnumber" ]; then
 				bnumber="Unknown"
 			fi
@@ -423,7 +554,7 @@ doRun()
 			if [ "$pid" == "$serverpid" ]; then
 				if [ "$restartserver" -eq 0 ]; then
 					# Check if the server has fully started
-					if ! isTheServerUp; then
+					if ! isTheServerRunning; then
 						# Enable auto-restart if the server is up
 						echo "`timestamp`: server is up"
 						touch "$sbserverroot/$sbautorestartfile"
@@ -502,7 +633,7 @@ doStop()
 		if isTheServerRunning; then
 			tput rc
 			echo "Killing server..."
-			kill -9 $PID
+			kill -KILL $PID
 		fi
 
 		tput rc; tput ed;
@@ -510,6 +641,20 @@ doStop()
 		echo "`timestamp`: stopped" >> "$logdir/sbserverLog"
 	else
 		echo "The server is already stopped"
+	fi
+}
+
+#
+# install / update / download update
+#
+runSteamCMDAppUpdate()
+{
+	if [ "${sbbuild}" == "stable" ]; then
+		runSteamCMDspinner +force_install_dir "$1" +app_update $stable_appid $2
+	elif [ "${sbbuild}" == "unstable" ]; then
+		runSteamCMDspinner +force_install_dir "$1" +app_update $unstable_appid $2
+	elif [ "${sbbuild}" == "nightly" ]; then
+		runSteamCMDspinner +force_install_dir "$1" +app_update $unstable_appid $2 +beta nightly
 	fi
 }
 
@@ -530,8 +675,9 @@ doInstall()
 	fi
 
 	cd "$steamcmdroot"
+    echo -n "Installing Starbound server"
 	# install the server
-	./$steamcmdexec +@NoPromptForPassword 1 +login $steamuser +force_install_dir "$sbserverroot" +app_update $s_appid validate +quit
+    runSteamCMDAppUpdate "$arkserverroot" validate
 	# the current version should be the last version. We set our version
 	getCurrentVersion
 }
@@ -552,22 +698,38 @@ doUpdate()
 		elif [ "$arg" == "--validate" ]; then
 			validate=validate
 			appupdate=1
-		fi
+        elif [[ "$arg" =~ "^--stagingdir=" ]]; then
+            arkStagingDir="${ark#--stagingdir=}"
+		elif [ "$arg" == "--downloadonly" ]; then
+			downloadonly=1
+		elif [ "$arg" == "--build=*" ]; then
+			if isUserInstall; then
+				sed -i -e "s|^sbbuild=.*|sbbuild=\"${1#--build=}\""
+					   "${HOME}/.shadowbound.cfg"
+			else
+				sed -i -e "s|^sbbuild=.*|sbbuild=\"${1#--build=}\""
+					   "/etc/shadowbound/shadowbound.cfg"
+			fi
+        else
+            echo "Unrecognized option $arg"
+            echo "Try 'shadowbound -h' or 'shadowbound --help' for more information."
+            exit 1
+        fi
 	done
 
-	echo "$$" >"${sbserverroot}/.sb-update.lock.$$"
+	echo "$$" >"${sbserverroot}/.sb-update.lock.$$" 2>/dev/null
 
 	while true; do
-		if ! ln "${sbserverroot}/.sb-update.lock.$$" "${sbserverroot}/.sb-update.lock"; then
+		if ! ln "${sbserverroot}/.sb-update.lock.$$" "${sbserverroot}/.sb-update.lock" 2>/dev/null; then
 			local lockpid="$(<"${sbserverroot}/.sb-update.lock")"
 
-			if [ -n "$lockpid" ] && [ "$lockpid" != "$$" ] && kill -0 "$lockpid"; then
+			if [ -n "$lockpid" ] && [ "$lockpid" != "$$" ] && kill -0 "$lockpid" 2>/dev/null; then
 				echo "Update already in progress (PID: $lockpid)"
-				rm -f "${sbserverroot}/.sb-update.lock.$$"
+		rm -f "${sbserverroot}/.sb-update.lock.$$" 2>/dev/null
 				return 1
 			fi
 
-			rm -f "${sbserverroot}/.sb-update.lock.$$"
+			rm -f "${sbserverroot}/.sb-update.lock"
 		else
 			break
 		fi
@@ -579,13 +741,71 @@ doUpdate()
 
 	if isUpdateNeeded; then
 		appupdate=1
+
+    if [ -n "${sbStagingDir}" -a "${sbStagingDir}" != "${sbserverroot}" ]; then
+      if [ ! -d "$sbStagingDir/linux32" ]; then
+        echo "Copying to staging directory"
+        mkdir -p "$sbStagingDir"
+        if [ "$(stat -c "%d" "$sbserverroot")" == "$(stat -c "%d" "$sbStagingDir")" ]; then
+          cp -al "$sbserverroot/assets/." "$sbStagingDir/assets"
+          cp -al "$sbserverroot/linux32/." "$sbStagingDir/linux32"
+          cp -al "$sbserverroot/linux64/." "$sbStagingDir/linux64"
+          cp -al "$sbserverroot/osx/." "$sbStagingDir/osx"
+          cp -al "$sbserverroot/tiled/." "$sbStagingDir/tiled"
+          cp -al "$sbserverroot/win32/." "$sbStagingDir/win32"
+          cp -al "$sbserverroot/win64/." "$sbStagingDir/win64"
+          cp -a "$sbserverroot/steamapps/." "$sbStagingDir/steamapps"
+        else
+          rsync -a "$sbserverroot/." "$sbStagingDir/."
+        fi
+        rm -rf "$sbStagingDir/mods"*
+        rm -rf "$sbStagingDir/stroage"*
+        rm -rf "$sbStagingDir/Starbound Complete OST"*
+        rm -rf "$sbStagingDir/_CommonRedist"*
+      fi
+
+      echo -n "Downloading Shadowbound update"
+      cd "$steamcmdroot"
+      runSteamCMDAppUpdate "$sbStagingDir" $validate
+      if [ -d "${sbStagingDir}/steamapps/downloading/${appid}" ]; then
+        echo "Update download interrupted"
+        return 1
+      fi
 	fi
 
-	if [ -n "$appupdate" ]; then
+	if [ -n "$downloadonly" ]; then
+		if [ -n "$appupdate" -a -n "$arkStagingDir" -a "$arkStagingDir" != "$arkserverroot" ]; then
+			echo "Server update downloaded"
+		fi
+		if [ -n "$modupdate" ]; then
+			echo "Mod update downloaded"
+		fi
+		echo "Not applying update - download-only enabled"
+	elif [ -n "$appupdate" -o -n "$modupdate" ]; then
+		if isTheServerRunning; then
+			if [ "$updatetype" == "safe" ]; then
+				while [ ! `find $arkserverroot/ShooterGame/Saved/SavedArks -mmin -1 -name ${serverMap##*/}.ark` ]; do
+					echo "`timestamp`: Save file older than 1 minute. Delaying update." >> "$logdir/update.log"
+					sleep 30s
+				done
+				echo "`timestamp`: Save file newer than 1 minute. Performing an update." >> "$logdir/update.log"
+			elif [ "$updatetype" == "warn" ]; then
+				if ! doWarn update; then
+					return 1
+				fi
+			elif [ "$updatetype" == "ifempty" ]; then
+				numplayers=$(( $(numPlayersConnected) + 0 ))
+				if (( numplayers == 0 )); then
+					echo "${numplayers} players are still connected"
+					return 1
+				fi
+			fi
+		fi
+
 		# check if the server was alive before the update so we can launch it back after the update
 		serverWasAlive=0
 		
-		if isTheServerRunning ;then
+		if isTheServerRunning; then
 			serverWasAlive=1
 		fi
 
@@ -596,16 +816,23 @@ doUpdate()
 		fi
 	
 		if [ -n "$appupdate" ]; then
-			cd "$steamcmdroot"
-			if [ "${sbbuild}" == "stable" ]; then
-				./$steamcmdexec +@NoPromptForPassword 1 +login $steamuser +force_install_dir "$sbserverroot" +app_update $s_appid $validate +quit
-			elif [ "${sbbuild}" == "unstable" ]; then
-				./$steamcmdexec +@NoPromptForPassword 1 +login $steamuser +force_install_dir "$sbserverroot" +app_update $un_appid $validate -beta NONE +quit
-			elif [ "${sbbuild}" == "nightly" ]; then
-				./$steamcmdexec +@NoPromptForPassword 1 +login $steamuser +force_install_dir "$sbserverroot" +app_update $un_appid $validate -beta nightly +quit
+			if [ -d "${sbStagingDir}" -a "${sbStagingDir}" != "${sbserverroot}" ]; then
+				echo "Applying update from staging directory"
+
+				if [ "$(stat -c "%d" "$arkserverroot")" == "$(stat -c "%d" "$arkStagingDir")" ]; then
+					cp -alu --remove-destination "$arkStagingDir/ShooterGame/." "$arkserverroot/ShooterGame"
+					cp -alu --remove-destination "$arkStagingDir/Engine/." "$arkserverroot/Engine"
+					cp -alu --remove-destination "$arkStagingDir/linux64/." "$arkserverroot/linux64"
+					cp -alu --remove-destination "$arkStagingDir/PackageInfo.bin" "$arkserverroot/PackageInfo.bin"
+					cp -alu --remove-destination "$arkStagingDir/steamclient.so" "$arkserverroot/steamclient.so"
+					cp -au --remove-destination "$arkStagingDir/steamapps/." "$arkserverroot/steamapps"
+				else
+					rsync -a "$arkStagingDir/." "$arkserverroot"
+				fi
 			else
-				echo "`timestamp`: [ " "$RED" "ERROR" "$NORMAL" "] Starbound build is wrong (${sbbuild})"
-				return 1
+				echo -n "Performing ARK update"
+				cd "$steamcmdroot"
+		runSteamCMDAppUpdate "$sbserverroot" $validate
 			fi
 
 			# the current version should be the last version. We set our version
@@ -655,6 +882,77 @@ printStatus()
 	echo -e "$NORMAL" "Server version: " "$GREEN" $instver "$NORMAL"
 }
 
+getAllInstanceNames()
+{
+	declare -A instancenames
+	for varname in "${!configfile_@}"; do
+		instancename="${varname#configfile_}"
+		instancenames[${instancename}]="${instancename}"
+	done
+	for f in /etc/shadowbound/instances/*.cfg; do
+		if [ -f "${f}" ]; then
+		instancename="${f##*/}"
+		instancename="${instancename%.cfg}"
+		instancenames[${instancename}]="${instancename}"
+		fi
+	done
+	for f in ${HOME}/.config/shadowbound/instances/*.cfg; do
+		if [ -f "${f}" ]; then
+			instancename="${f##*/}"
+			instancename="${instancename%.cfg}"
+			instancenames[${instancename}]="${instancename}"
+		fi
+	done
+
+	echo "${instancenames[@]}"
+}
+
+doListAllInstances()
+{
+	if [ "$1" == "--brief" ]; then
+		getAllInstanceNames
+	else
+		echo "The following instances are available:"
+		for n in $(getAllInstanceNames); do
+		(
+			echo -n "  @${n}: "
+			useConfig "$n"
+			echo "${configfile} => ${sbserverroot}"
+		)
+		done
+	fi
+}
+
+useConfig()
+{
+	configfile=
+	if [ -f "/etc/sbmanager/instances/${1}.cfg" ]; then
+		configfile="/etc/sbmanager/instances/${1}.cfg"
+	fi
+	if [ -f "${HOME}/.config/sbmanager/instances/${1}.cfg" ]; then
+		configfile="${HOME}/.config/sbmanager/instances/${1}.cfg"
+	fi
+	for varname in "${!configfile_@}"; do
+		if [ "configfile_$1" == "$varname" ]; then
+			configfile="${!varname}"
+			break
+		fi
+	done
+	if [ -z "$configfile" ]; then
+		echo "Error: no config files for instance $1"
+		exit 1
+	fi
+	if [ ! -f "$configfile" ]; then
+		echo "Error: config file $configfile does not exist"
+		exit 1
+	fi
+	source "$configfile"
+	if [ -z "$sbserverroot" ]; then
+		echo "Error: sbserverroot not set"
+		exit 1
+	fi
+}
+
 #---------------------
 # Main program
 #---------------------
@@ -697,6 +995,19 @@ while true; do
 		backup)
 			doBackup
 		;;
+		broadcast)
+			doBroadcast "$2"
+			shift
+		;;
+		rconcmd)
+			rconcmd "$2"
+			shift
+		;;
+		testparameter)
+			getStarboundServerSetting "$2" "$3"
+			shift
+			shift
+		;;
 		status)
 			printStatus
 		;;
@@ -713,10 +1024,21 @@ while true; do
 		uninstall-tools)
 			doUninstallTools
 		;;
+		--version)
+			echo "Version: ${sbstVersion}"
+			echo "Channel: ${shaboundbuild}"
+			if [ -n "${sbstCommit}" ]; then
+				echo "Commit: ${sbstCommit:0:7}"
+			fi
+			exit 1
+		;;
 		-h|--help)
 			echo -e "Usage: shadowbound [OPTION]\n"
 			echo "Option                           Description"
 			echo "backup                           Saves a backup of your server inside the backup directory"
+			echo "broadcast                        Broadcasts message to server"
+			echo "rconcmd                          Executes custom RCon cmd"
+			echo "testparameter                    Used for debuging the function to get the server's settings"
 			echo "checkupdate                      Check for a new Starbound server version"
 			echo "install                          Install the Starbound server files from steamcmd"
 			echo "restart                          Stops the server and then starts it"
@@ -727,14 +1049,15 @@ while true; do
 			echo "update <build> [--backup]        Check for a new Starbound server version, if needed, stops the server, updates it, and starts it again"
 			echo "upgrade-tools                    Check for a new Shadowbound version and upgrades it if needed"
 			echo "uninstall-tools                  Uninstall Shadowbound"
+			echo "view <server/shadowbound>        Shows the log of the server. Leave parameter blank to view the starbound server's logs."
 			echo "--help                           Show this help"
 			echo "--version                        Show the version info of Shadowbound"
 			echo
-			echo "Update command takes the below builds:"
-			echo "       stable                    Stable build of Starbound"
-			echo "       unstable                  Unstable build of Starbound"
-			echo "       nightly                   Nightly build of Starbound"
-			echo "       NONE                      Or leave the build blank and use from config"
+			echo "Update command takes the below options:"
+			echo "--force                          Force the update of starbound."
+			echo "--backup                         Backup starbound's files."
+			echo "--validate                       Validate starbound's files."
+			echo "--build=[type]                   Set the default build to update with (takes stable, unstable, nightly ONLY!)"
 			exit 1
 		;;
 		*)
