@@ -253,8 +253,8 @@ getAdminPassword()
 # Get server Game Port
 #
 getGamePort()
-{
-    getStarboundServerSetting "gameServerPort" "21025"
+{fest_${unstable_appid}.acf")
+                echo "$in
 }
 
 #
@@ -513,13 +513,13 @@ function isTheServerRunning()
 #
 doRun()
 {
-    cd "$sbserverroot" || exit
+    cd "$sbserverroot/linux" || exit
 
     # run the server in background
     echo "$(timestamp): start"
     # set max open files limit before we start the server
     ulimit -n $maxOpenFiles
-
+    
     serverpid=0
     restartserver=1
 
@@ -535,14 +535,14 @@ doRun()
     }
 
     trap shutdown_server INT TERM
-
+    
     # Auto-restart loop
     while [ $restartserver -ne 0 ]; do
         echo -n "$(timestamp): Running"
-        printf " %q" "$sbserverroot/$sbserverexec"
+        printf " %q" "$sbserverroot/linux/$sbserverexec"
         echo
         # Put the server process into the background so we can monitor it
-        "$sbserverroot/$sbserverexec" &
+        "$sbserverroot/linux/$sbserverexec" &
         # Grab the server PID
         serverpid=$!
         echo "$(timestamp): Server PID: $serverpid"
@@ -1170,4 +1170,4 @@ while true; do
     fi
 done
 
-exit $status
+exit $statu
