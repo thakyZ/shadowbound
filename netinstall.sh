@@ -57,6 +57,7 @@ case "$status" in
   "0")
     echo "Shadowbound was correctly installed in your system inside the home directory of $steamcmd_user!"
     ;;
+    
   "1")
     echo "Something where wrong :("
     ;;

@@ -96,13 +96,17 @@ if [ "$showusage" == "no" -a -z "$steamcmd_user" ]; then
 fi
 
 if [ "$userinstall" == "yes" ]; then
-	REFIX="${PREFIX:-${HOME}}"
-	EXECPREFIX="${EXECPREFIX:-${PREFIX}}"
-	DATAPREFIX="${DATAPREFIX:-${PREFIX}/.local/share}"
+  PREFIX="${PREFIX:-${HOME}}"
+  EXECPREFIX="${EXECPREFIX:-${PREFIX}}"
+  DATAPREFIX="${DATAPREFIX:-${PREFIX}/.local/share}"
+  CONFIGFILE="${PREFIX}/.shadowbound.cfg"
+  INSTANCEDIR="${PREFIX}/.config/shadowbound/instances"
 else
-	PREFIX="${PREFIX:-/usr/local}"
-	EXECPREFIX="${EXECPREFIX:-${PREFIX}}"
-	DATAPREFIX="${DATAPREFIX:-${PREFIX}/share}"
+  PREFIX="${PREFIX:-/usr/local}"
+  EXECPREFIX="${EXECPREFIX:-${PREFIX}}"
+  DATAPREFIX="${DATAPREFIX:-${PREFIX}/share}"
+  CONFIGFILE="/etc/shadowbound/shadowbound.cfg"
+  INSTANCEDIR="/etc/shadowbound/instances"
 fi
 
 BINDIR="${BINDIR:-${EXECPREFIX}/bin}"
@@ -147,6 +151,7 @@ if [ "$userinstall" == "yes" ]; then
 	
 	# Copy the rcon client script to ~/.local/share/shadowbound
 	cp sbrconclient.py "${INSTALL_ROOT}${DATADIR}/sbrconclient.py"
+	chmod +x "${INSTALL_ROOT}${DATADIR}/sbrconclient.py"
 
 	# Copy the uninstall script to ~/.local/share/shadowbound
 	cp uninstall-user.sh "${INSTALL_ROOT}${DATADIR}/shadowbound-uninstall.sh"
@@ -158,44 +163,35 @@ if [ "$userinstall" == "yes" ]; then
 	# Create a folder in ~/logs to let Shadowbound write its own log files
 	mkdir -p "${INSTALL_ROOT}${PREFIX}/logs/shadowbound"
 
+  # Copy example instance config
+  cp instance.cfg.example "${INSTALL_ROOT}/${INSTANCEDIR}/instance.cfg.example"
+  # Change the defaults in the new instance config template
+  sed -i -e "s|\"/home/steam|\"${PREFIX}|" \
+         "${INSTALL_ROOT}${INSTANCEDIR}/instance.cfg.example"
+
 	# Copy shadowbound.cfg to ~/.shadowbound.cfg.NEW
 	cp shadowbound.cfg "${INSTALL_ROOT}${PREFIX}/.shadowbound.cfg.NEW"
 	# Change the defaults in the new config file
 	sed -i -e "s|^steamcmd_user=\"steam\"|steamcmd_user=\"--me\"|" \
-		   -e "s|\"/home/steam|\"${PREFIX}|" \
-		   -e "s|/var/log/shadowbound|${PREFIX}/logs/shadowbound|" \
-		   -e "s|^install_bindir=.*|install_bindir=\"${BINDIR}\"|" \
-		   -e "s|^install_libexecdir=.*|install_libexecdir=\"${LIBEXECDIR}\"|" \
-		   -e "s|^install_datadir=.*|install_datadir=\"${DATADIR}\"|" \
-		   "${INSTALL_ROOT}${PREFIX}/.shadowbound.cfg.NEW"
+		     -e "s|\"/home/steam|\"${PREFIX}|" \
+         -e "s|/var/log/shadowbound|${PREFIX}/logs/shadowbound|" \
+		     -e "s|^install_bindir=.*|install_bindir=\"${BINDIR}\"|" \
+		     -e "s|^install_libexecdir=.*|install_libexecdir=\"${LIBEXECDIR}\"|" \
+		     -e "s|^install_datadir=.*|install_datadir=\"${DATADIR}\"|" \
+		     "${INSTALL_ROOT}${PREFIX}/.shadowbound.cfg.NEW"
 
-	# Copy shadowbound.cfg to ~/.shadowbound.cfg if it doesn't already exist
-	if [ -f "${INSTALL_ROOT}${PREFIX}/.shadowbound.cfg" ]; then
-	  newopts=( sbbackupdir sbautorestartfile install_bindir install_libexecdir install_datadir )
-	  newopt_steamcmd_appinfocache="${PREFIX}/Steam/appcache/appinfo.vdf"
-	  newopt_sbbackupdir="${PREFIX}/Starbound-Backups"
-	  newopt_sbautorestartfile=".autorestart"
-	  newopt_install_bindir="${BINDIR}"
-	  newopt_install_libexecdir="${LIBEXECDIR}"
-	  newopt_install_datadir="${DATADIR}"
+  # Copy shadowbound.cfg to ~/.shadowbound.cfg if it doesn't already exist
+  if [ -f "${INSTALL_ROOT}${CONFIGFILE}" ]; then
+    bash ./migrate-config.sh "${INSTALL_ROOT}${CONFIGFILE}"
+    bash ./migrate-main-instance.sh "${INSTALL_ROOT}${CONFIGFILE}" "${INSTALL_ROOT}${INSTANCEDIR}/main.cfg"
 
-	  if grep '^\(servermail\|shaboundVersion\)=' "${INSTALL_ROOT}${PREFIX}/.shadowbound.cfg" >/dev/null 2>&1; then
-		sed -i '/^\(servermail\|shaboundVersion\)=/d' "${INSTALL_ROOT}${PREFIX}/.shadowbound.cfg"
-	  fi
-
-	  for optname in "${newopts[@]}"; do
-		if ! grep "^${optname}=" "${INSTALL_ROOT}${PREFIX}/.shadowbound.cfg" >/dev/null 2>&1; then
-	  noptname="newopt_${optname}"
-	  echo "${optname}='${!noptname}'" >>"${INSTALL_ROOT}${PREFIX}/.shadowbound.cfg"
-	fi
-	  done
-
-	  echo "A previous version of Shadowbound was detected in your system, your old configuration was not overwritten. You may need to manually update it."
-	  echo "A copy of the new configuration file was included in '${INSTALL_ROOT}${PREFIX}/.shadowbound.cfg.NEW'. Make sure to review any changes and update your config accordingly!"
-	  exit 2
-	else
-	  mv -n "${INSTALL_ROOT}${PREFIX}/.shadowbound.cfg.NEW" "${INSTALL_ROOT}${PREFIX}/.shadowbound.cfg"
-	fi
+    echo "A previous version of Shadowbound was detected in your system, your old configuration was not overwritten. You may need to manually update it."
+    echo "A copy of the new configuration file was included in '${CONFIGFILE}.NEW'. Make sure to review any changes and update your config accordingly!"
+    exit 2
+  else
+    mv -n "${INSTALL_ROOT}${CONFIGFILE}.NEW" "${INSTALL_ROOT}${CONFIGFILE}"
+    cp -n "${INSTALL_ROOT}/${INSTANCEDIR}/instance.cfg.example" "${INSTALL_ROOT}/${INSTANCEDIR}/main.cfg"
+  fi
 else
 	# Copy shadowbound to /usr/bin and set permissions
 	cp shadowbound "${INSTALL_ROOT}${BINDIR}/shadowbound"
@@ -205,14 +201,15 @@ else
 	
 	# Copy the rcon client script to ~/.local/share/shadowbound
 	cp sbrconclient.py "${INSTALL_ROOT}${LIBEXECDIR}/sbrconclient.py"
+	chmod +x "${INSTALL_ROOT}${LIBEXECDIR}/sbrconclient.py"
 	
 	# Copy the uninstall script to ~/.local/share/shadowbound
 	cp uninstall.sh "${INSTALL_ROOT}${LIBEXECDIR}/shadowbound-uninstall.sh"
 	chmod +x "${INSTALL_ROOT}${LIBEXECDIR}/shadowbound-uninstall.sh"
 	sed -i -e "s|^BINDIR=.*|BINDIR=\"${BINDIR}\"|" \
-		   -e "s|^LIBEXECDIR=.*|LIBEXECDIR=\"${LIBEXECDIR}\"|" \
-		   -e "s|^DATADIR=.*|DATADIR=\"${DATADIR}\"|" \
-		   "${INSTALL_ROOT}${LIBEXECDIR}/shadowbound-uninstall.sh"
+		     -e "s|^LIBEXECDIR=.*|LIBEXECDIR=\"${LIBEXECDIR}\"|" \
+		     -e "s|^DATADIR=.*|DATADIR=\"${DATADIR}\"|" \
+        "${INSTALL_ROOT}${LIBEXECDIR}/shadowbound-uninstall.sh"
 
 	# Copy sbdaemon to /etc/init.d ,set permissions and add it to boot
 	if [ -f /lib/lsb/init-functions ]; then
@@ -299,6 +296,13 @@ else
 	mkdir -p "${INSTALL_ROOT}/var/log/shadowbound"
 	chown "$steamcmd_user" "${INSTALL_ROOT}/var/log/shadowbound"
 
+  # Create a folder in /etc/shadowbound to hold instance config files
+  mkdir -p "${INSTALL_ROOT}${INSTANCEDIR}"
+  chown "$steamcmd_user" "${INSTALL_ROOT}${INSTANCEDIR}"
+
+  # Copy example instance config
+  cp instance.cfg.example "${INSTALL_ROOT}${INSTANCEDIR}/instance.cfg.example"
+
 	# Copy shadowbound.cfg inside linux configuation folder if it doesn't already exists
 	mkdir -p "${INSTALL_ROOT}/etc/shadowbound"
 	cp shadowbound.cfg "${INSTALL_ROOT}/etc/shadowbound/shadowbound.cfg.NEW"
@@ -310,32 +314,17 @@ else
 		   -e "s|^install_datadir=.*|install_datadir=\"${DATADIR}\"|" \
 		   "${INSTALL_ROOT}/etc/shadowbound/shadowbound.cfg.NEW"
 
-	if [ -f "${INSTALL_ROOT}/etc/shadowbound/shadowbound.cfg" ]; then
-		newopts=( sbbackupdir sbautorestartfile install_bindir install_libexecdir install_datadir )
-		newopt_steamcmd_appinfocache="/home/${steamcmd_user}/Steam/appcache/appinfo.vdf"
-		newopt_sbbackupdir="/home/${steamcmd_user}/Starbound-Backups"
-		newopt_sbautorestartfile=".autorestart"
-		newopt_install_bindir="${BINDIR}"
-		newopt_install_libexecdir="${LIBEXECDIR}"
-		newopt_install_datadir="${DATADIR}"
+  if [ -f "${INSTALL_ROOT}${CONFIGFILE}" ]; then
+    bash ./migrate-config.sh "${INSTALL_ROOT}${CONFIGFILE}"
+    bash ./migrate-main-instance.sh "${INSTALL_ROOT}${CONFIGFILE}" "${INSTALL_ROOT}${INSTANCEDIR}/main.cfg"
 
-		if grep '^\(servermail\|shaboundVersion\)=' "${INSTALL_ROOT}/etc/shadowbound/shadowbound.cfg" >/dev/null 2>&1; then
-			sed -i '/^\(servermail\|shaboundVersion\)=/d' "${INSTALL_ROOT}/etc/shadowbound/shadowbound.cfg"
-		fi
-
-		for optname in "${newopts[@]}"; do
-			if ! grep "^${optname}=" "${INSTALL_ROOT}/etc/shadowbound/shadowbound.cfg" >/dev/null 2>&1; then
-				noptname="newopt_${optname}"
-				echo "${optname}='${!noptname}'" >>"${INSTALL_ROOT}/etc/shadowbound/shadowbound.cfg"
-			fi
-		done
-
-		echo "A previous version of Shadowbound was detected in your system, your old configuration was not overwritten. You may need to manually update it."
-		echo "A copy of the new configuration file was included in /etc/shadowbound. Make sure to review any changes and update your config accordingly!"
-		exit 2
-	else
-		mv -n "${INSTALL_ROOT}/etc/shadowbound/shadowbound.cfg.NEW" "${INSTALL_ROOT}/etc/shadowbound/shadowbound.cfg"
-	fi
+    echo "A previous version of Shadowbound was detected in your system, your old configuration was not overwritten. You may need to manually update it."
+    echo "A copy of the new configuration file was included in /etc/arkmanager. Make sure to review any changes and update your config accordingly!"
+    exit 2
+  else
+    mv -n "${INSTALL_ROOT}${CONFIGFILE}.NEW" "${INSTALL_ROOT}${CONFIGFILE}"
+    cp -n "${INSTALL_ROOT}/${INSTANCEDIR}/instance.cfg.example" "${INSTALL_ROOT}/${INSTANCEDIR}/main.cfg"
+  fi
 fi
 
 exit 0
