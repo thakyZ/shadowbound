@@ -175,7 +175,6 @@ if [ "$userinstall" == "yes" ]; then
     # Copy shadowbound.cfg to ~/.shadowbound.cfg if it doesn't already exist
     if [ -f "${INSTALL_ROOT}${CONFIGFILE}" ]; then
       bash ./migrate-config.sh "${INSTALL_ROOT}${CONFIGFILE}"
-      bash ./migrate-main-instance.sh "${INSTALL_ROOT}${CONFIGFILE}" "${INSTALL_ROOT}${INSTANCEDIR}/main.cfg"
 
       echo "A previous version of Shadowbound was detected in your system, your old configuration was not overwritten. You may need to manually update it."
     echo "A copy of the new configuration file was included in '${CONFIGFILE}.NEW'. Make sure to review any changes and update your config accordingly!"
@@ -299,10 +298,9 @@ else
 
   if [ -f "${INSTALL_ROOT}${CONFIGFILE}" ]; then
     bash ./migrate-config.sh "${INSTALL_ROOT}${CONFIGFILE}"
-    bash ./migrate-main-instance.sh "${INSTALL_ROOT}${CONFIGFILE}" "${INSTALL_ROOT}${INSTANCEDIR}/main.cfg"
 
     echo "A previous version of Shadowbound was detected in your system, your old configuration was not overwritten. You may need to manually update it."
-    echo "A copy of the new configuration file was included in /etc/arkmanager. Make sure to review any changes and update your config accordingly!"
+    echo "A copy of the new configuration file was included in /etc/shadowbound. Make sure to review any changes and update your config accordingly!"
     exit 2
   else
     mv -n "${INSTALL_ROOT}${CONFIGFILE}.NEW" "${INSTALL_ROOT}${CONFIGFILE}"
