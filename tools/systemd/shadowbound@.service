@@ -2,5 +2,6 @@
 Description=Daemon to start an starbound server instance
 
 [Service]
-ExecStart=/usr/bin/shadowbound useconfig %i run
+User=steam
+ExecStart=/usr/bin/shadowbound run
 Type=simple

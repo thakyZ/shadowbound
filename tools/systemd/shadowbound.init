@@ -1,5 +1,14 @@
 #!/bin/bash
 
-for service in main $(grep -o '^configfile_[^=]*' /etc/shadowbound/shadowbound.cfg); do
-  systemctl start shadowbound@${service#configfile_}
+DAEMON=/usr/bin/shadowbound
+
+for service in $(${DAEMON} list-instances --brief); do
+  case "$1" in
+    start)
+      systemctl start shadowbound@${service}
+    ;;
+    stop)
+      systemctl stop shadowbound@${service}
+    ;;
+  esac
 done

@@ -2,7 +2,7 @@
 #
 # /etc/rc.d/init.d/shadowbound
 #
-# Shadowbound
+# Shadowbound daemon
 #
 # chkconfig: 2345 80 20
 # description: Shadowbound daemon used to start the server and keep it updated
@@ -34,58 +34,109 @@ GREEN="\\033[1;32m"
 RED="\\033[1;31m"
 NORMAL="\\033[0;39m"
 
+SVCNAME="${0##*/}"
+INSTANCE="${SVCNAME#*.}"
+
+if [ "$INSTANCE" == "$SVCNAME" ]; then
+  INSTANCE="$2"
+fi
+
 set -e
 
 # If the daemon is not there, then exit.
 test -x $DAEMON || exit 5
 
+function start_instance(){
+  local INSTANCE="$1"
+  PID="$(<"/var/run/shadowbound.${INSTANCE}.pid")"
+  if [ -n "$PID" ] && kill -0 "$PID" >/dev/null 2>&1; then
+    if grep " ${PID} .* ${DAEMON}" <(ps -ef) >/dev/null 2>&1; then
+      echo "$NAME @${INSTANCE} is already running"
+      return 0
+    fi
+  fi
+  echo -n "Starting $NAME @${INSTANCE}: "
+  ulimit -n 100000
+  "${DAEMON}" run "@${INSTANCE}" &
+  PID="$!"
+
+  sleep 5
+  if kill -0 "$PID" >/dev/null 2>&1; then
+    echo "$PID" >"/var/run/shadowbound.${INSTANCE}.pid"
+    touch "/var/lock/subsys/shadowbound.${INSTANCE}"
+    echo "[" "$GREEN" " OK " "$NORMAL" "]"
+    return 0
+  else
+    echo "[" "$RED" " FAILED " "$NORMAL" "]"
+    return 1
+  fi
+}
+
+function start_all_instances(){
+  local nosuccess=0
+  local anyfailure=0
+  for instance in $("${DAEMON}" list-instances --brief); do
+    if start_instance "$instance"; then
+      nosuccess=0
+    else
+      anyfailure=1
+    fi
+  done
+
+  return $nosuccess
+}
+
+function stop_instance(){
+  local INSTANCE="$1"
+  echo -n "Stopping $NAME @${INSTANCE}: "
+  "${DAEMON}" stop "@${INSTANCE}" &
+  rm -f "/var/lock/subsys/shadowbound.${INSTANCE}"
+  rm -f "/var/run/shadowbound.${INSTANCE}.pid"
+  echo "[" "$GREEN" " OK " "$NORMAL" "]"
+  return 0
+}
+
 case "$1" in
-	start)
-		log_daemon_msg "Starting" "$NAME"
-		ulimit -n 100000
-		su -s /bin/sh -c "$DAEMON start" $steamcmd_user > /dev/null
-		sleep 5
-		PID=`ps -ef | grep $NAME | grep -v grep | awk '{print $2}'`
-		
-		if  [ -n "$PID" ];  then
-			echo "$PID" >/var/run/shadowbound.pid
-			touch /var/lock/subsys/shadowbound
-			echo "[" "$GREEN" " OK " "$NORMAL" "]"
-			exit 0
-		else
-			echo "[" "$RED" " FAILED " "$NORMAL" "]"
-			exit 1
-		fi
-	;;
-	stop)
-		log_daemon_msg "Stopping" "$NAME"
-		su -s /bin/sh -c "$DAEMON stop" $steamcmd_user > /dev/null
-		sleep 5
-		PID=`ps -ef | grep $NAME | grep -v grep | awk '{print $2}'`
-		
-		if  [ -n "$PID" ];  then
-			echo "[" "$RED" " FAILED " "$NORMAL" "]"
-			exit 1
-		else
-		echo "[" "$GREEN" " OK " "$NORMAL" "]"
-			rm -f /var/lock/subsys/shadowbound
-			rm /var/run/shadowbound.pid
-			exit 0
-		fi
-	;;
-	restart)
-		echo -n "Restarting $NAME: "
-		ulimit -n 100000
-		su -s /bin/sh -c "$DAEMON restart" $steamcmd_user > /dev/null
-		echo "OK"
-	;;
-	status)
-		su -s /bin/sh -c "$DAEMON status" $steamcmd_user
-		exit 0
-	;;
-	*)
-		# For invalid arguments, print the usage message.
-		echo "Usage: $0 {start|stop|restart|status}"
-		exit 1
-	;;
+  start)
+    if [ -n "$INSTANCE" ]; then
+      start_instance "$INSTANCE"
+      exit $?
+    else
+      if start_all_instances; then
+        touch /var/lock/subsys/shadowbound
+        exit 0
+      else
+        exit 1
+      fi
+    fi
+  ;;
+
+  stop)
+    if [ -n "$INSTANCE" ]; then
+      stop_instance "$INSTANCE"
+      exit $?
+    else
+      for instance in $("${DAEMON}" list-instances --brief); do
+        stop_instance "$instance"
+      done
+      rm -f "/var/lock/subsys/shadowbound"
+      exit $?
+    fi
+  ;;
+
+  restart)
+    "$0" stop
+    "$0" start
+  ;;
+
+  status)
+    "$DAEMON" status "@${INSTANCE:-all}"
+    exit 0
+  ;;
+
+  *)
+    # For invalid arguments, print the usage message.
+    echo "Usage: $0 {start|stop|restart|status}"
+    exit 1
+  ;;
 esac
