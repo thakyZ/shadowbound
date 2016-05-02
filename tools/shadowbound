@@ -17,11 +17,11 @@ doUpgradeTools() {
         fi
         echo "shadowbound v${sbstVersion}: Checking for updates..."
 # shellcheck disable=SC2154
-        sbstLatestVersion=$(curl -s "https://raw.githubusercontent.com/thakyZ/shadowbound/${shaboundbuild}/.version")
-        sbstLatestCommit=$(curl -s "https://api.github.com/repos/thakyZ/shadowbound/git/refs/heads/${shaboundbuild}" | sed -n 's/^ *"sha": "\(.*\)",.*/\1/p')
+        sbstLatestVersion=$(curl -s "https://raw.githubusercontent.com/thakyZ/shadowbound/${sbstChannel}/.version")
+        sbstLatestCommit=$(curl -s "https://api.github.com/repos/thakyZ/shadowbound/git/refs/heads/${sbstChannel}" | sed -n 's/^ *"sha": "\(.*\)",.*/\1/p')
 
         if [ "$sbstLatestVersion" == "Not Found" ]; then
-                echo "Channel ${shaboundbuild} does not exist"
+                echo "Channel ${sbstChannel} does not exist"
                 echo
                 echo "Available channels:"
                 curl -s https://api.github.com/repos/thakyZ/shadowbound/git/refs/heads | sed -n 's|^ *"ref": "refs/heads/\(.*\)",|\1|p'
@@ -44,14 +44,14 @@ doUpgradeTools() {
                 read -p "A new version was found! Do you want to upgrade Shadowbound to v${sbstLatestVersion}?" -n 1 -r
                 echo -en "\n"
                 if [[ $REPLY =~ ^[Yy]$ ]]; then
-                        curl -s "https://raw.githubusercontent.com/thakyZ/shadowbound/${shaboundbuild}/netinstall.sh" | $sudo bash -s -- "${steamcmd_user}" "${shaboundbuild}" "${reinstall_args[@]}"
+                        curl -s "https://raw.githubusercontent.com/thakyZ/shadowbound/${sbstChannel}/netinstall.sh" | $sudo bash -s -- "${steamcmd_user}" "${sbstChannel}" "${reinstall_args[@]}"
                         exit 0
                 fi
         elif [[ $shaboundLatestVersion == "$sbstVersion" && "$sbstLatestCommit" != "$sbstCommit" ]]; then
                 read -p "A hotfix is available for v${sbstVersion}.  Do you wish to install it?" -n 1 -r
                 echo -en "\n"
                 if [[ $REPLY =~ ^[Yy]$ ]]; then
-                        curl -s "https://raw.githubusercontent.com/thakyZ/shadowbound/${shaboundbuild}/netinstall.sh" | $sudo bash -s -- "${steamcmd_user}" "${shaboundbuild}" "${reinstall_args[@]}"
+                        curl -s "https://raw.githubusercontent.com/thakyZ/shadowbound/${sbstChannel}/netinstall.sh" | $sudo bash -s -- "${steamcmd_user}" "${sbstChannel}" "${reinstall_args[@]}"
                         exit 0
                 fi
         else
