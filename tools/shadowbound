@@ -125,7 +125,7 @@ if [ -f "/etc/shadowbound/shadowbound.cfg" ]; then
   source /etc/shadowbound/shadowbound.cfg
 fi
 
-# shellcheck source=/home/steam/.shadowbound.cfg
+# shellcheck disable=SC1091
 if [ -f "${HOME}/.shadowbound.cfg" ]; then
   # shellcheck disable=SC1091
   source "${HOME}/.shadowbound.cfg"
