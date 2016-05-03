@@ -471,7 +471,7 @@ function getAvailableVersion() {
 #
 function getServerPID() {
 # shellcheck disable=SC2154
-  pgrep "$sbserverroot/$sbserverexec" | grep -v grep | awk '{print $2}'
+  pgrep "starbound_serve" | grep -v grep | awk '{print $1}'
 }
 
 #
