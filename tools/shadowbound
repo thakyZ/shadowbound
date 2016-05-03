@@ -552,7 +552,7 @@ doRun() {
     done
 
     # Wait on the now-dead process to reap it and get its return status
-    wait $serverpid
+    wait "$serverpid"
     echo "$(timestamp): exited with status $?"
 
     # doStop will remove the autorestart file
@@ -575,6 +575,7 @@ doStart() {
   else
 # shellcheck disable=SC2154
     if [ "$sbAutoUpdateOnStart" == "true" ]; then
+# shellcheck diable=SC2076
       if ! [[ " $* " =~ " --noautoupdate " ]]; then
         echo "Updating server"
         doUpdate --update-mods
@@ -595,6 +596,7 @@ doStart() {
 #
 doStop() {
   if isTheServerRunning; then
+# shellcheck diable=SC2076
     if [[ " $* " =~ " --warn " ]]; then
       doWarn "$1"
     fi
@@ -633,10 +635,13 @@ doStop() {
 #
 runSteamCMDAppUpdate() {
   if [ "${sbbuild}" == "stable" ]; then
+# shellcheck diable=SC2086
     runSteamCMDspinner +force_install_dir "$1" +app_update $stable_appid $2
   elif [ "${sbbuild}" == "unstable" ]; then
+# shellcheck diable=SC2086
     runSteamCMDspinner +force_install_dir "$1" +app_update $unstable_appid $2 -beta NONE
   elif [ "${sbbuild}" == "nightly" ]; then
+# shellcheck diable=SC2086
     runSteamCMDspinner +force_install_dir "$1" +app_update $unstable_appid $2 -beta nightly
   fi
 }
@@ -790,6 +795,7 @@ doUpdate() {
       appupdate=1
     elif [ "$arg" == "--backup" ]; then
       sbBackupPreUpdate=true
+# shellcheck diable=SC2076
     elif [[ "$arg" =~ "^--stagingdir=" ]]; then
 # shellcheck disable=SC2154
       sbStagingDir="${sb#--stagingdir=}"
@@ -987,8 +993,10 @@ showUsage() {
 }
 
 viewLogs() {
+# shellcheck diable=SC2076
   if [[ " $1 " =~ " --shadowbound " ]]; then
     tail -f "${logdir}/${shadowboundLog}"
+# shellcheck diable=SC2076
   elif [[ " $1 " =~ " --server " ]]; then
     tail -f "${logdir}/starbound_server.log"
   else
@@ -1135,4 +1143,4 @@ while true; do
   fi
 done
 
-exit $statu
+exit "$status"
