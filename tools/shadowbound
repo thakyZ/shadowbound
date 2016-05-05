@@ -422,7 +422,7 @@ function getCurrentVersion() {
       else
         instver=""
       fi
-  if [[ "${sbbuild}" == "unstable" || "${sbbuild}" == "nightly" ]]; then
+  elif [[ "${sbbuild}" == "unstable" || "${sbbuild}" == "nightly" ]]; then
       if [ -f "${sbserverroot}/steamapps/appmanifest_${unstable_appid}.acf" ]; then
         instver=$(while read -r name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${unstable_appid}.acf")
         echo "$instver" > "${sbserverroot}/sbVersion"
