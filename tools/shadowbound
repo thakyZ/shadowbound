@@ -452,7 +452,7 @@ function getAvailableVersion() {
       fi
   elif [ "${sbbuild}" == "nightly" ]; then
       rm -f "$steamcmd_appinfocache"
-      bnumber=$("$steamcmdroot"/"$steamcmdexec" +@NoPromptForPassword 1 +login "${steamuser}" +app_info_update 1 +app_info_print "$unstable_appid" -beta nightly +quit | while read -r name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done)
+      bnumber=$("$steamcmdroot"/"$steamcmdexec" +@NoPromptForPassword 1 +login "${steamuser}" +app_info_update 1 +app_info_print "$unstable_appid" -beta nightly +quit | while read -r name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.nightly" "buildid"; break; fi; done)
       if [ -z "$bnumber" ]; then
         bnumber="Unknown"
       fi
