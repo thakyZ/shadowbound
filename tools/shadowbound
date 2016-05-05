@@ -414,8 +414,7 @@ function parseSteamACF() {
 #
 function getCurrentVersion() {
 # shellcheck disable=SC2154
-  case "$sbbuild" in
-    stable)
+  if [ "${sbbuild}" == "stable" ]; then
       if [ -f "${sbserverroot}/steamapps/appmanifest_${stable_appid}.acf" ]; then
         instver=$(while -r read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${stable_appid}.acf")
 # shellcheck disable=SC2154
@@ -423,8 +422,7 @@ function getCurrentVersion() {
       else
         instver=""
       fi
-    ;;
-    unstable|nightly)
+  if [[ "${sbbuild}" == "unstable" || "${sbbuild}" == "nightly" ]]; then
       if [ -f "${sbserverroot}/steamapps/appmanifest_${unstable_appid}.acf" ]; then
         instver=$(while read -r name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${unstable_appid}.acf")
         echo "$instver" > "${sbserverroot}/sbVersion"
@@ -439,8 +437,7 @@ function getCurrentVersion() {
 # Get the current available server version on steamdb
 #
 function getAvailableVersion() {
-  case "$sbbuild" in
-    stable)
+  if [ "${sbbuild}" == "stable" ]; then
 # shellcheck disable=SC2154
       rm -f "$steamcmd_appinfocache"
 # shellcheck disable=SC2154
@@ -448,22 +445,19 @@ function getAvailableVersion() {
       if [ -z "$bnumber" ]; then
         bnumber="Unknown"
       fi
-    ;;
-    unstable)
+  elif [ "${sbbuild}" == "unstable" ]; then
       rm -f "$steamcmd_appinfocache"
       bnumber=$("$steamcmdroot"/"$steamcmdexec" +@NoPromptForPassword 1 +login "${steamuser}" +app_info_update 1 +app_info_print "$unstable_appid" -beta NONE +quit | while -r read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done)
       if [ -z "$bnumber" ]; then
         bnumber="Unknown"
       fi
-    ;;
-    nightly)
+  elif [ "${sbbuild}" == "nightly" ]; then
       rm -f "$steamcmd_appinfocache"
       bnumber=$("$steamcmdroot"/"$steamcmdexec" +@NoPromptForPassword 1 +login "${steamuser}" +app_info_update 1 +app_info_print "$unstable_appid" -beta nightly +quit | while read -r name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done)
       if [ -z "$bnumber" ]; then
         bnumber="Unknown"
       fi
-    ;;
-  esac
+  fi
 }
 
 #
