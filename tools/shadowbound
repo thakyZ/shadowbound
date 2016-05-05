@@ -429,8 +429,7 @@ function getCurrentVersion() {
       else
         instver=""
       fi
-    ;;
-  esac
+  fi
 }
 
 #
