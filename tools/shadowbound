@@ -1085,10 +1085,10 @@ while true; do
       doBackup
     ;;
     broadcast)
-      doBroadcast "${options[@]}"
+      doBroadcastWithEcho "${args}"
     ;;
     rconcmd)
-      rconcmd "${options[@]}"
+      rconcmd "${args}"
     ;;
     status)
       printStatus
