@@ -26,7 +26,7 @@ iptables -I INPUT -p udp --dport 21025 -j ACCEPT
 NB: Change the ports according to the ones set in your `shadowbound.cfg` file.
 
 Install Shadowbound
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 To install Shadowbound run this command:
 
