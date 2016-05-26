@@ -1,0 +1,254 @@
+= Starbound Linux Server Tools
+
+This tool allows you to manage your Starbound linux server without having to remember long commands.   
+It provides a lot of features, to get the full list check the <<Usage>> section.
+
+Installation
+------------
+
+Prerequisites
+~~~~~~~~~~~~~
+
+To install Shadowbound you must have already installed **SteamCMD** following this guide:
+
+https://developer.valvesoftware.com/wiki/SteamCMD#Linux
+
+We assume you have created the `steam` user to store steamcmd and your Starbound server.
+
+Requirements
+~~~~~~~~~~~~
+
+To allow your Starbound server to communicate with the outside you have to open a port in your firewall:
+
+[source,sh]
+iptables -I INPUT -p udp --dport 21025 -j ACCEPT
+
+NB: Change the ports according to the ones set in your `shadowbound.cfg` file.
+
+Install Shadowbound
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+To install Shadowbound run this command:
+
+[source,sh]
+curl -sL http://git.io/v0dNN | sudo bash -s steam
+
+NB: You may want to change the `bash -s` parameter to fit your steam user if different from `steam`.
+
+This will copy the `shadowbound` script and its daemon to the proper directories and will create an empty log directory in `/var/log` for Shadowbound.
+
+To instead perform a user-install of Shadowbound as an unprivileged user, run this command:
+
+[source,sh]
+curl -sL http://git.io/v0dNN | bash -s -- --me
+
+Configuration
+~~~~~~~~~~~~~
+
+Stored in `/etc/shadowbound/shadowbound.cfg` you can find the variables needed to start the server, like the system environment variables and so on.
+
+You can override or add variables for a specific system user creating a file called `.shadowbound.cfg` in the home directory of the system user.
+
+See <<Configuration files>> for more options.
+
+Install Starbound Server
+~~~~~~~~~~~~~
+
+To install Starbound Server just run this command as normal user:
+
+[source,sh]
+shadowbound install
+
+Usage
+-----
+
+`shadowbound [Global Options] <command> [Command Options] [Command Args] [Instances]`
+
+Global Options
+~~~~~~~~~~~~~~
+
+[horizontal]
+`--help`::
+    Prints some help on using the command
+
+`--version`::
+    Prints the shadowbound version
+
+Common Options
+~~~~~~~~~~~~~~
+
+[horizontal]
+`--verbose`::
+    Exposes the output of SteamCMD
+
+`--dots`::
+    Prints dots for progress
+
+`--spinner`::
+    Uses a spinner for progress
+
+Main Commands
+~~~~~~~~~~~~~
+
+[horizontal]
+`upgrade-tools`::
+    Upgrades the Shadowbound to the latest version
+
+`uninstall-tools`::
+    Uninstalls the Shadowbound
+
+`run`::
+    Runs the server without putting it into the background
+
+`start`::
+    Runs the server and puts it into the background
+
+    `--noautoupdate`;;
+        Disables automatic updating on startup if it is enabled
+
+`stop`::
+    Stops the server if it is running
+
+    `--warn`;;
+        Warns any connected players that the server is going down
+
+`restart`::
+    Runs the `stop` command followed by the `restart` command.
+    Accepts and passes the options for those commands
+
+`install`::
+    Downloads and installs (or validates an existing install) of
+    the Starbound server
+
+`update`::
+    Updates an install of the Starbound server (or installs it if it's
+    not already installed)
+
+    `--force`;;
+        Bypasses the check for if an update is available
+
+    `--warn`;;
+        Warns any connected players that the server is going down for
+        an update
+
+    `--validate`;;
+        Re-validates the Starbound server install
+
+    `--backup`;;
+        Backs up the saved world and game config before updating
+
+    `--downloadonly`;;
+        Downloads the update but does not apply it.  Only has effect
+        if a staging directory is set.
+
+`checkupdate`::
+    Checks if an Starbound server update is available
+
+`backup`::
+    Backs up the saved world and game config files to a compressed
+    tar file in the backups directory specified in the config
+
+`broadcast "message"`::
+    Broadcasts a message to players connected to the server using
+    the RCON `broadcast` command
+
+`rconcmd "command"`::
+    Sends the specified RCON command to the server and prints its
+    response
+
+`status`::
+    Prints the status of the ARK server
+
+Configuration files
+-------------------
+
+Global configuration
+~~~~~~~~~~~~~~~~~~~~
+
+Global configuration is stored in `/etc/shadowbound/shadowbound.cfg`
+and/or `~/.shadowbound.cfg`.
+
+The following options cannot be overridden in the instance config
+files:
+
+[horizontal]
+`sbstChannel`::
+    Specifies the release channel (git branch) to use when
+    upgrading the Starbound server tools
+
+`install_bindir`::
+`install_libexecdir`::
+`install_datadir`::
+    Set by the installer to specify where to install the executable
+    and data files
+
+`steamcmdroot`::
+    The directory in which `SteamCMD` is installed
+
+`steamcmdexec`::
+    The `steamcmd.sh` executable
+
+`steamcmd_user`::
+    The user under which the tools should be run.  Set to `--me`
+    in `~/.arkmanager.cfg` in the case of a user-install
+
+`steamcmd_appinfocache`::
+    The appinfo cache directory used by SteamCMD
+
+`steamuser`::
+    The username to use when installing Starbound
+    (You must have your login cached)
+
+`sbserverroot`::
+    The relative path where the starbound server folder is
+    installed.
+
+`sbserverexec`::
+    The relative path within an Starbound server install where the
+    Starbound server executable can be found.
+
+`sbbackupdir`::
+    The directory in which to store backups.  Can be overridden in
+    the instance config.
+
+`sbwarnminutes`::
+    The number of minutes over which the shutdown and update warnings
+    should be run
+
+`sbautorestartfile`::
+    The relative path within an Starbound server install to place the
+    autorestart lock file
+
+`sbAutoUpdateOnStart`::
+    Set to `true` to enable updating before server startup
+
+`sbBackupPreUpdate`::
+    Set to `true` to enable automatic backups before updating
+
+`sbStagingDir`::
+    Sets the staging directory in order to download updates
+    before shutting down the server
+
+`sbMaxBackupSizeMB`::
+    Limits the size of the stored backups
+
+`msgWarnUpdateMinutes`::
+`msgWarnUpdateSeconds`::
+`msgWarnRestartMinutes`::
+`msgWarnRestartSeconds`::
+`msgWarnShutdownMinutes`::
+`msgWarnShutdownSeconds`::
+    Templated messages for warnings, where `%d` is replaced with the
+    number of minutes / seconds before the update / restart / shutdown
+
+`logdir`::
+    Specifies where to store log files
+
+`sbbuild`::
+    The starbound build to use, please only use `stable`, `unstable`, or `nightly`
+
+`stable_appid`::
+    The Steam AppID of the stable branch for Starbound
+
+`unstable_appid`::
+    The Steam AppID for the unstable or nightly branch for Starbound
