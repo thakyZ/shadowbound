@@ -52,7 +52,7 @@ You can override or add variables for a specific system user creating a file cal
 See <<Configuration files>> for more options.
 
 Install Starbound Server
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 To install Starbound Server just run this command as normal user:
 
