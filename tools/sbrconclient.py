@@ -72,9 +72,9 @@ def getResponse(sock):
 # begin main loop
 interactive_mode = True
 while interactive_mode:
-	rcon_server_port = 21026
-	rcon_server_host = '127.0.0.1'
-	rcon_server_pass = 'pass'
+	rcon_server_port = None
+	rcon_server_host = None
+	rcon_server_pass = None
 	command_string = None
 	response_string = None
 	response_id = -1
