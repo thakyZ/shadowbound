@@ -159,11 +159,33 @@ sbautorestartfile="${sbautorestartfile:-.autorestart}"
 install_bindir="${install_bindir:-${0%/*}}"
 install_libexecdir="${install_libexecdir:-${install_bindir%/*}/libexec/shadowbound}"
 
+# Starbound version 0 = Koala | 1 = Giraffe | 2 = 1.0
+starboundver=0
+
 if [ "$steamcmd_user" == "--me" ]; then
   install_datadir="${install_datadir:-${HOME}/.share/local/shadowbound}"
 else
   install_datadir="${install_datadir:-${install_bindir%/*}/share/shadowbound}"
 fi
+
+if [ -d "${sbserverroot}/mods" ]; then
+  starboundver=2
+elif [ -d "${sbserverroot}/giraffe_storage" ]; then
+  starboundver=1
+elif [ -d "${sbserverroot}/koala_storage" ]; then
+  starboundver=0
+fi
+
+starbound_config=""
+
+if [ $starboundver -eq 2 ]; then
+  starbound_config="${sbserverroot}/linux/starbound_server.config"
+elif [ $starboundver -eq 1 ]; then
+  starbound_config="${sbserverroot}/giraffe_storage/starbound.config"
+elif [ $starboundver -eq 0 ]; then
+  starbound_config="${sbserverroot}/koala_storage/starbound.config"
+fi
+  
 
 #---------------------
 # functions
@@ -224,7 +246,7 @@ getStarboundServerSetting() {
   echo "${!varname}"
   else
   local val
-  val="$(tr -d '\0\376\377' <"${sbserverroot}/storage/starbound.config" | sed -n 's/.*"'"$1"'" : \(.*\),/\1/p' )"
+  val="$(tr -d '\0\376\377' <"${starbound_config}" | sed -n 's/.*"'"$1"'" : \(.*\),/\1/p' )"
   if [ -n "$val" ]; then
     val="${val%\"}"
     val="${val#\"}"
@@ -507,12 +529,21 @@ doRun() {
   # Auto-restart loop
   while [ $restartserver -ne 0 ]; do
     echo -n "$(timestamp): Running"
-    printf " %q" "$sbserverroot/linux/$sbserverexec"
-    echo
-    # Put the server process into the background so we can monitor it
-    "$sbserverroot/linux/$sbserverexec" &
-    # Grab the server PID
-    serverpid=$!
+    if [ $starboundver -eq 2 ]; do
+      printf " %q" "$sbserverroot/linux/$sbserverexec"
+      echo
+      # Put the server process into the background so we can monitor it
+      "$sbserverroot/linux/$sbserverexec" &
+      # Grab the server PID
+      serverpid=$!
+    elif [[ $starboundver -eq 1 || $starboundver -eq 0 ]]; do
+      printf " %q" "$sbserverroot/linux${sbArchitecture}/$sbserverexec"
+      echo
+      # Put the server process into the background so we can monitor it
+      "$sbserverroot/linux64/$sbserverexec" &
+      # Grab the server PID
+      serverpid=$!
+    fi
     echo "$(timestamp): Server PID: $serverpid"
     rm -f "$sbserverroot/$sbautorestartfile"
     restartserver=0
@@ -671,43 +702,43 @@ doWarn() {
 
   if [ "$1" == "update" ]; then
 # shellcheck disable=SC2154
-  if [ -n "$msgWarnUpdateMinutes" ]; then
-    warnmsgmin="$msgWarnUpdateMinutes"
-  else
-    warnmsgmin="This Starbound server will shutdown for an update in %d minutes"
-  fi
+    if [ -n "$msgWarnUpdateMinutes" ]; then
+      warnmsgmin="$msgWarnUpdateMinutes"
+    else
+      warnmsgmin="This Starbound server will shutdown for an update in %d minutes"
+    fi
 # shellcheck disable=SC2154
-  if [ -n "$msgWarnUpdateSeconds" ]; then
-    warnmsgsec="$msgWarnUpdateSeconds"
-  else
-    warnmsgsec="This Starbound server will shutdown for an update in %d seconds"
-  fi
+    if [ -n "$msgWarnUpdateSeconds" ]; then
+      warnmsgsec="$msgWarnUpdateSeconds"
+    else
+      warnmsgsec="This Starbound server will shutdown for an update in %d seconds"
+    fi
   elif [ "$1" == "restart" ]; then
 # shellcheck disable=SC2154
-  if [ -n "$msgWarnRestartMinutes" ]; then
-    warnmsgmin="$msgWarnRestartMinutes"
-  else
-    warnmsgmin="This Starbound server will shutdown for a restart in %d minutes"
-  fi
+    if [ -n "$msgWarnRestartMinutes" ]; then
+      warnmsgmin="$msgWarnRestartMinutes"
+    else
+      warnmsgmin="This Starbound server will shutdown for a restart in %d minutes"
+    fi
 # shellcheck disable=SC2154
-  if [ -n "$msgWarnRestartSeconds" ]; then
-    warnmsgsec="$msgWarnRestartSeconds"
-  else
-    warnmsgsec="This Starbound server will shutdown for a restart in %d seconds"
-  fi
+    if [ -n "$msgWarnRestartSeconds" ]; then
+      warnmsgsec="$msgWarnRestartSeconds"
+    else
+      warnmsgsec="This Starbound server will shutdown for a restart in %d seconds"
+    fi
   else
 # shellcheck disable=SC2154
   if [ -n "$msgWarnShutdownMinutes" ]; then
-    warnmsgmin="$msgWarnShutdownMinutes"
-  else
-    warnmsgmin="This Starbound server will shutdown in %d minutes"
-  fi
+      warnmsgmin="$msgWarnShutdownMinutes"
+    else
+      warnmsgmin="This Starbound server will shutdown in %d minutes"
+    fi
 # shellcheck disable=SC2154
-  if [ -n "$msgWarnShutdownSeconds" ]; then
-    warnmsgsec="$msgWarnShutdownSeconds"
-  else
-    warnmsgsec="This Starbound server will shutdown in %d seconds"
-  fi
+    if [ -n "$msgWarnShutdownSeconds" ]; then
+      warnmsgsec="$msgWarnShutdownSeconds"
+    else
+      warnmsgsec="This Starbound server will shutdown in %d seconds"
+    fi
   fi
 
   local pid
@@ -806,7 +837,7 @@ doUpdate() {
       lockpid="$(<"${sbserverroot}/.sb-update.lock")"
       if [ -n "$lockpid" ] && [ "$lockpid" != "$$" ] && kill -0 "$lockpid" 2>/dev/null; then
         echo "Update already in progress (PID: $lockpid)"
-    rm -f "${sbserverroot}/.sb-update.lock.$$" 2>/dev/null
+        rm -f "${sbserverroot}/.sb-update.lock.$$" 2>/dev/null
         return 1
       fi
       rm -f "${sbserverroot}/.sb-update.lock"
@@ -826,23 +857,23 @@ doUpdate() {
 
   if [[ -n "${sbStagingDir}" && "${sbStagingDir}" != "${sbserverroot}" ]]; then
     if [ ! -d "$sbStagingDir/linux" ]; then
-    echo "Copying to staging directory"
-    mkdir -p "$sbStagingDir"
-    if [ "$(stat -c "%d" "$sbserverroot")" == "$(stat -c "%d" "$sbStagingDir")" ]; then
-      cp -al "$sbserverroot/assets/." "$sbStagingDir/assets"
-      cp -al "$sbserverroot/linux/." "$sbStagingDir/linux32"
-      cp -al "$sbserverroot/osx/." "$sbStagingDir/osx"
-      cp -al "$sbserverroot/tiled/." "$sbStagingDir/tiled"
-      cp -al "$sbserverroot/win32/." "$sbStagingDir/win32"
-      cp -al "$sbserverroot/win64/." "$sbStagingDir/win64"
-      cp -a "$sbserverroot/steamapps/." "$sbStagingDir/steamapps"
-    else
-      rsync -a "$sbserverroot/." "$sbStagingDir/."
-    fi
-    rm -rf "$sbStagingDir/mods"*
-    rm -rf "$sbStagingDir/stroage"*
-    rm -rf "$sbStagingDir/Starbound Complete OST"*
-    rm -rf "$sbStagingDir/_CommonRedist"*
+      echo "Copying to staging directory"
+      mkdir -p "$sbStagingDir"
+      if [ "$(stat -c "%d" "$sbserverroot")" == "$(stat -c "%d" "$sbStagingDir")" ]; then
+        cp -al "$sbserverroot/assets/." "$sbStagingDir/assets"
+        cp -al "$sbserverroot/linux/." "$sbStagingDir/linux32"
+        cp -al "$sbserverroot/osx/." "$sbStagingDir/osx"
+        cp -al "$sbserverroot/tiled/." "$sbStagingDir/tiled"
+        cp -al "$sbserverroot/win32/." "$sbStagingDir/win32"
+        cp -al "$sbserverroot/win64/." "$sbStagingDir/win64"
+        cp -a "$sbserverroot/steamapps/." "$sbStagingDir/steamapps"
+      else
+        rsync -a "$sbserverroot/." "$sbStagingDir/."
+      fi
+      rm -rf "$sbStagingDir/mods"*
+      rm -rf "$sbStagingDir/stroage"*
+      rm -rf "$sbStagingDir/Starbound Complete OST"*
+      rm -rf "$sbStagingDir/_CommonRedist"*
     fi
 
     echo -n "Downloading Starbound update"
@@ -884,6 +915,8 @@ doUpdate() {
         if [ "$(stat -c "%d" "$sbserverroot")" == "$(stat -c "%d" "$sbagingDir")" ]; then
           cp -alu --remove-destination "$sbStagingDir/assets/." "$sbserverroot/assets"
           cp -alu --remove-destination "$sbStagingDir/linux/." "$sbserverroot/linux"
+          cp -alu --remove-destination "$sbStagingDir/linux64/." "$sbserverroot/linux64"
+          cp -alu --remove-destination "$sbStagingDir/linux32/." "$sbserverroot/linux32"
           cp -alu --remove-destination "$sbStagingDir/osx/." "$sbserverroot/osx"
           cp -alu --remove-destination "$sbStagingDir/tiled/." "$sbserverroot/tiled"
           cp -alu --remove-destination "$sbStagingDir/win32/." "$sbserverroot/win32"
@@ -895,7 +928,7 @@ doUpdate() {
       else
         echo -n "Performing Starbound update"
         cd "$steamcmdroot" || exit
-    runSteamCMDAppUpdate "$sbserverroot" $validate
+        runSteamCMDAppUpdate "$sbserverroot" $validate
       fi
 
       # the current version should be the last version. We set our version
