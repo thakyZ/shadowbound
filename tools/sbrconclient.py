@@ -86,9 +86,9 @@ while interactive_mode:
 		command_string = " ".join(sys.argv[4:])
 		interactive_mode = False
 	else:
-    rcon_server_host = raw_input("Host: ")
-    rcon_server_port = raw_input("Port: ")
-    rcon_server_pass = raw_input("Pass: ")
+		rcon_server_host = raw_input("Host: ")
+		rcon_server_port = raw_input("Port: ")
+		rcon_server_pass = raw_input("Pass: ")
 		command_string = raw_input("Command: ")
 	sock = socket.create_connection((rcon_server_host,rcon_server_port))
 	sock.settimeout(RCON_SERVER_TIMEOUT)
