@@ -438,7 +438,7 @@ function getCurrentVersion() {
 # shellcheck disable=SC2154
   if [ "${sbbuild}" == "stable" ]; then
       if [ -f "${sbserverroot}/steamapps/appmanifest_${stable_appid}.acf" ]; then
-        instver=$(while -r read name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${stable_appid}.acf")
+        instver=$(while read -r name val; do if [ "${name}" == "{" ]; then parseSteamACF "" "buildid"; break; fi; done <"${sbserverroot}/steamapps/appmanifest_${stable_appid}.acf")
 # shellcheck disable=SC2154
         echo "$instver" > "${sbserverroot}/sbVersion"
       else
