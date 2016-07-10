@@ -529,14 +529,14 @@ doRun() {
   # Auto-restart loop
   while [ $restartserver -ne 0 ]; do
     echo -n "$(timestamp): Running"
-    if [ $starboundver -eq 2 || $starboundver -eq 1 ]; then
+    if [[ $starboundver -eq 2 || $starboundver -eq 1 ]]; then
       printf " %q" "$sbserverroot/linux/$sbserverexec"
       echo
       # Put the server process into the background so we can monitor it
       "$sbserverroot/linux/$sbserverexec" &
       # Grab the server PID
       serverpid=$!
-    elif [[ || $starboundver -eq 0 ]]; then
+    elif [ $starboundver -eq 0 ]; then
       printf " %q" "$sbserverroot/linux${sbArchitecture}/$sbserverexec"
       echo
       # Put the server process into the background so we can monitor it
