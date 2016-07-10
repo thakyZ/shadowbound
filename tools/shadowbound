@@ -462,19 +462,19 @@ function getAvailableVersion() {
 # shellcheck disable=SC2154
       rm -f "$steamcmd_appinfocache"
 # shellcheck disable=SC2154
-      bnumber=$("$steamcmdroot"/"$steamcmdexec" +@NoPromptForPassword 1 +login "${steamuser}" +app_info_update 1 +app_info_print "$stable_appid" +quit | while -r read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done)
+      bnumber=$("$steamcmdroot"/"$steamcmdexec" +@NoPromptForPassword 1 +login "${steamuser}" +app_info_update 1 +app_info_print "$stable_appid" +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done)
       if [ -z "$bnumber" ]; then
         bnumber="Unknown"
       fi
   elif [ "${sbbuild}" == "unstable" ]; then
       rm -f "$steamcmd_appinfocache"
-      bnumber=$("$steamcmdroot"/"$steamcmdexec" +@NoPromptForPassword 1 +login "${steamuser}" +app_info_update 1 +app_info_print "$unstable_appid" -beta NONE +quit | while -r read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done)
+      bnumber=$("$steamcmdroot"/"$steamcmdexec" +@NoPromptForPassword 1 +login "${steamuser}" +app_info_update 1 +app_info_print "$unstable_appid" -beta NONE +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.public" "buildid"; break; fi; done)
       if [ -z "$bnumber" ]; then
         bnumber="Unknown"
       fi
   elif [ "${sbbuild}" == "nightly" ]; then
       rm -f "$steamcmd_appinfocache"
-      bnumber=$("$steamcmdroot"/"$steamcmdexec" +@NoPromptForPassword 1 +login "${steamuser}" +app_info_update 1 +app_info_print "$unstable_appid" -beta nightly +quit | while read -r name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.nightly" "buildid"; break; fi; done)
+      bnumber=$("$steamcmdroot"/"$steamcmdexec" +@NoPromptForPassword 1 +login "${steamuser}" +app_info_update 1 +app_info_print "$unstable_appid" -beta nightly +quit | while read name val; do if [ "${name}" == "{" ]; then parseSteamACF ".depots.branches.nightly" "buildid"; break; fi; done)
       if [ -z "$bnumber" ]; then
         bnumber="Unknown"
       fi
