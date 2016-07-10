@@ -530,10 +530,10 @@ doRun() {
   while [ $restartserver -ne 0 ]; do
     echo -n "$(timestamp): Running"
     if [ $starboundver -eq 2 ]; then
-      printf " %q" "$sbserverroot/linux/$sbserverexec"
+      printf " %q" "$sbserverroot/$sbserverexec"
       echo
       # Put the server process into the background so we can monitor it
-      "$sbserverroot/linux/$sbserverexec" &
+      "$sbserverroot/$sbserverexec" &
       # Grab the server PID
       serverpid=$!
     elif [[ $starboundver -eq 0 || $starboundver -eq 1 ]]; then
