@@ -145,7 +145,7 @@ GREEN="\\033[1;32m"
 RED="\\033[1;31m"
 YELLOW="\\e[0;33m"
 NORMAL="\\033[0;39m"
-maxOpenFiles=100000
+maxOpenFiles=400000
 
 # Set TERM to "dumb" if TERM is not set
 export TERM=${TERM:-dumb}
