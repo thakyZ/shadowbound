@@ -529,7 +529,7 @@ doRun() {
   # Auto-restart loop
   while [ $restartserver -ne 0 ]; do
     echo -n "$(timestamp): Running"
-    printf " %q" "$sbserverroot/linux${sbArchitecture}/$sbserverexec"
+    printf " %q" "$sbserverroot/$sbserverexec"
     echo
     # Put the server process into the background so we can monitor it
     "$sbserverroot/linux64/$sbserverexec" &
