@@ -532,7 +532,7 @@ doRun() {
     printf " %q" "$sbserverroot/$sbserverexec"
     echo
     # Put the server process into the background so we can monitor it
-    "$sbserverroot/linux64/$sbserverexec" &
+    "$sbserverroot/$sbserverexec" &
     # Grab the server PID
     serverpid=$!
     echo "$(timestamp): Server PID: $serverpid"
