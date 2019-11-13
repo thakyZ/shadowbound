@@ -252,3 +252,13 @@ files:
 
 `unstable_appid`::
     The Steam AppID for the unstable or nightly branch for Starbound
+
+`sbArchitecture`::
+    This tells the script what architecture you are using, so only use `32` or `64`, this will be phased out later.
+
+Credits
+-------
+
+Most of the credit that I am going to give is to @FezVrasta, I used his script as a base.
+Then to @doomsider for helping me make this work.
+And to me lastly for testing the script and coding it.
